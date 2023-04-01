@@ -1,8 +1,13 @@
-import { SignIn } from "@clerk/nextjs";
+import { SignIn, SignOutButton } from "@clerk/nextjs";
 import { type NextPage } from "next";
 import Head from "next/head";
 import Image from "next/image";
+import Link from "next/link";
 import { toast } from "react-hot-toast";
+import AboutMe from "~/components/aboutme";
+import BlogCard from "~/components/blogcard";
+import Hero from "~/components/hero";
+import { PageLayout } from "~/components/layout";
 import { api } from "~/utils/api";
 
 const Home: NextPage = () => {
@@ -29,9 +34,21 @@ const Home: NextPage = () => {
         <meta name="description" content="Personal web portfolio" />
         <link rel="icon" href="/favicon.ico" />
       </Head>
-      <main className="flex min-h-screen flex-col items-center justify-center bg-zinc-900">
-        <div className="container flex flex-col items-center justify-center gap-12 px-4 py-16 ">
-          <SignIn />
+      <PageLayout>
+        <Hero />
+        <AboutMe />
+        <Link href={""}>
+          <BlogCard
+            title={"Working with Threejs"}
+            description={
+              "Making a 3D scene in Threejs, for a web portfolio with a twist."
+            }
+            date={""}
+            imageUri={""}
+          />
+        </Link>
+        {/* <SignIn />
+          <SignOutButton />
           <button
             onClick={() =>
               mutate({
@@ -45,25 +62,8 @@ const Home: NextPage = () => {
             }
           >
             Post
-          </button>
-          <Image
-            className="animate-[wiggle_0.5s_ease-in-out_infinite]"
-            src={"/wave3.png"}
-            width={150}
-            height={150}
-            alt={"wave"}
-          />
-          <div className="-translate-x-full transform transition-transform hover:translate-x-0">
-            <Image
-              className="animate-[wiggle_0.5s_ease-in-out_infinite]"
-              src={"/wave3.png"}
-              width={150}
-              height={150}
-              alt={"wave"}
-            />
-          </div>
-        </div>
-      </main>
+          </button> */}
+      </PageLayout>
     </>
   );
 };
