@@ -13,13 +13,13 @@ export default function Hero() {
           height={80}
         />
         <div>
-          <p className="text-default-text text-3xl font-bold">Dylan</p>
-          <p className="text-default-text font-extralight">Software Engineer</p>
+          <p className="text-3xl font-bold text-default-text">Dylan</p>
+          <p className="font-extralight text-default-text">Software Engineer</p>
         </div>
       </div>
-      <p className="text-default-text mt-8 text-xl font-thin">
-        Hi my name is Dylan, welcome to my website! Here I blog about my latest
-        projects and experiences, feel free to reach out for information.
+      <p className="mt-8 text-xl font-thin text-default-text">
+        Hi my name is Dylan, welcome to my website! Here you kind learn about
+        me, my work, and some of my latest projects.
       </p>
       <div className="mt-4 flex items-center">
         <SocialMedia
@@ -57,7 +57,7 @@ function SocialMedia(props: { icon: string; text: string; link: string }) {
         width={24}
         height={24}
       />
-      <p className="text-default-text text-md mr-6 font-bold tracking-wide">
+      <p className="text-md mr-6 font-bold tracking-wide text-default-text">
         {props.text}
       </p>
     </a>

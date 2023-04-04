@@ -3,10 +3,7 @@ import Image from "next/image";
 import ShakingImage from "./shakingimage";
 import { motion, AnimatePresence } from "framer-motion";
 
-const content = [
-  { id: 1, content: <Card1 /> },
-  { id: 2, content: <Waves /> },
-];
+const content = [{ content: <Card1 /> }, { content: <Waves /> }];
 
 export default function AboutMe() {
   const [activeIndex, setActiveIndex] = useState(0);
@@ -19,7 +16,7 @@ export default function AboutMe() {
   }, []);
 
   return (
-    <div className="relative h-[600px]">
+    <div className="relative h-[550px]">
       <div className="absolute h-full w-full ">
         <SpinningSun />
       </div>
@@ -92,22 +89,22 @@ function Waves() {
       <div className="absolute left-[650px]">
         <ShakingImage />
       </div>
-      <div className="absolute left-20 top-40">
+      <div className="absolute left-20 top-36">
         <ShakingImage />
       </div>
-      <div className="absolute left-80 top-60">
+      <div className="absolute left-80 top-56">
         <ShakingImage />
       </div>
-      <div className="absolute left-[600px] top-52">
+      <div className="absolute left-[600px] top-44">
         <ShakingImage />
       </div>
-      <div className="absolute top-80">
+      <div className="absolute top-72">
         <ShakingImage />
       </div>
-      <div className="absolute left-72 top-[400px]">
+      <div className="absolute left-72 top-[380px]">
         <ShakingImage />
       </div>
-      <div className="absolute left-[560px] top-[380px]">
+      <div className="absolute left-[560px] top-[350px]">
         <ShakingImage />
       </div>
     </div>
@@ -135,11 +132,10 @@ function Card1() {
       </div>
       <div className="col-start-3 col-end-7 row-span-2 mt-4">
         <p className="text-2xl text-zinc-400">
-          I am a Full Stack developer and a 4th year computer science student
-          with hands-on co-op experiences and a number personal project
-          accomplishments. I pride myself in my adaptability in the workplace,
-          as well as my drive to create and improve the latest and greatest
-          technologies.
+          Born in 2000 to a Portuguese mother and Polish immigrant father, I am
+          currently in my senior year of studying Computer Science. I work
+          diligently on the skills I have, and I am always looking to learn
+          more. Hopefully we can meet at a hackathon sometime soon! 🤝
         </p>
       </div>
       <div className="col-span-6">
