@@ -1,13 +1,60 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import Image from "next/image";
+import ShakingImage from "./shakingimage";
+import { motion, AnimatePresence } from "framer-motion";
+
+const content = [
+  { id: 1, content: <Card1 /> },
+  { id: 2, content: <Waves /> },
+];
 
 export default function AboutMe() {
+  const [activeIndex, setActiveIndex] = useState(0);
+
+  useEffect(() => {
+    const intervalId = setInterval(() => {
+      setActiveIndex((prevIndex) => (prevIndex + 1) % content.length);
+    }, 3000);
+    return () => clearInterval(intervalId);
+  }, []);
+
   return (
-    <div className="relative">
+    <div className="relative h-[600px]">
       <div className="absolute h-full w-full ">
         <SpinningSun />
       </div>
-      <Card2 />
+      <AnimatePresence mode="wait">
+        <motion.div
+          key={activeIndex}
+          initial={{ opacity: 0, translateX: -30 }}
+          animate={{ opacity: 1, translateX: 0 }}
+          exit={{ opacity: 0, translateX: 30 }}
+          transition={{ duration: 0.5 }}
+        >
+          <motion.div
+            key={`transition-${activeIndex}`}
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.8 }}
+            transition={{ duration: 0.5 }}
+            style={{
+              position: "absolute",
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+            }}
+          />
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.5 }}
+          >
+            {content[activeIndex]?.content}
+          </motion.div>
+        </motion.div>
+      </AnimatePresence>
     </div>
   );
 }
@@ -29,6 +76,40 @@ function SpinningSun() {
         width={125}
         height={125}
       />
+    </div>
+  );
+}
+
+function Waves() {
+  return (
+    <div className="h-full">
+      <div className="absolute left-44">
+        <ShakingImage />
+      </div>
+      <div className="absolute left-96 top-16">
+        <ShakingImage />
+      </div>
+      <div className="absolute left-[650px]">
+        <ShakingImage />
+      </div>
+      <div className="absolute left-20 top-40">
+        <ShakingImage />
+      </div>
+      <div className="absolute left-80 top-60">
+        <ShakingImage />
+      </div>
+      <div className="absolute left-[600px] top-52">
+        <ShakingImage />
+      </div>
+      <div className="absolute top-80">
+        <ShakingImage />
+      </div>
+      <div className="absolute left-72 top-[400px]">
+        <ShakingImage />
+      </div>
+      <div className="absolute left-[560px] top-[380px]">
+        <ShakingImage />
+      </div>
     </div>
   );
 }
