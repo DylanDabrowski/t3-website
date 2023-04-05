@@ -3,7 +3,11 @@ import Image from "next/image";
 import ShakingImage from "./shakingimage";
 import { motion, AnimatePresence } from "framer-motion";
 
-const content = [{ content: <Card1 /> }, { content: <Waves /> }];
+const cards = [<Card1 key={1} />, <Card2 key={2} />]; // Add as many cards as you want
+const content = cards.flatMap((card) => [
+  { content: card },
+  { content: <Waves /> },
+]);
 
 export default function AboutMe() {
   const [activeIndex, setActiveIndex] = useState(0);
@@ -11,7 +15,7 @@ export default function AboutMe() {
   useEffect(() => {
     const intervalId = setInterval(() => {
       setActiveIndex((prevIndex) => (prevIndex + 1) % content.length);
-    }, 3000);
+    }, 5000); // Increase the interval time to account for the additional animation duration
     return () => clearInterval(intervalId);
   }, []);
 
@@ -28,28 +32,7 @@ export default function AboutMe() {
           exit={{ opacity: 0, translateX: 30 }}
           transition={{ duration: 0.5 }}
         >
-          <motion.div
-            key={`transition-${activeIndex}`}
-            initial={{ opacity: 0, scale: 0.8 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.8 }}
-            transition={{ duration: 0.5 }}
-            style={{
-              position: "absolute",
-              top: 0,
-              left: 0,
-              right: 0,
-              bottom: 0,
-            }}
-          />
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.5 }}
-          >
-            {content[activeIndex]?.content}
-          </motion.div>
+          {content[activeIndex]?.content}
         </motion.div>
       </AnimatePresence>
     </div>
@@ -58,7 +41,7 @@ export default function AboutMe() {
 
 function SpinningSun() {
   return (
-    <div className="relative h-32">
+    <div className="relative">
       <Image
         className="absolute left-8 top-8"
         src={"/yellow-circle.svg"}
@@ -80,31 +63,31 @@ function SpinningSun() {
 function Waves() {
   return (
     <div className="h-full">
-      <div className="absolute left-44">
+      <div className="absolute left-44 top-10">
         <ShakingImage />
       </div>
-      <div className="absolute left-96 top-16">
+      <div className="absolute left-96 top-20">
         <ShakingImage />
       </div>
-      <div className="absolute left-[650px]">
+      <div className="absolute left-[580px] top-8">
         <ShakingImage />
       </div>
-      <div className="absolute left-20 top-36">
+      <div className="absolute left-24 top-40">
         <ShakingImage />
       </div>
-      <div className="absolute left-80 top-56">
+      <div className="absolute left-80 top-52">
         <ShakingImage />
       </div>
-      <div className="absolute left-[600px] top-44">
+      <div className="absolute left-[540px] top-44">
         <ShakingImage />
       </div>
-      <div className="absolute top-72">
+      <div className="absolute left-10 top-72">
         <ShakingImage />
       </div>
-      <div className="absolute left-72 top-[380px]">
+      <div className="absolute left-64 top-[330px]">
         <ShakingImage />
       </div>
-      <div className="absolute left-[560px] top-[350px]">
+      <div className="absolute left-[500px] top-[320px]">
         <ShakingImage />
       </div>
     </div>
@@ -150,40 +133,64 @@ function Card1() {
 
 function Card2() {
   return (
-    <div className="grid grid-cols-6 grid-rows-4 gap-1">
-      {/* <p className="h-40 bg-green-200">1</p> */}
-      <div className="col-start-2 col-end-7 flex flex-col">
-        <Image
-          className="h-32 rounded-2xl object-cover"
-          src={"/stock computer image.jpg"}
-          alt="profile picture"
-          width={1000}
-          height={200}
-        />
+    <div className="grid grid-cols-4 grid-rows-4 gap-1">
+      <div className="col-span-4 flex items-end justify-center">
+        <h1 className="text-3xl font-bold text-default-text">Tech Stack</h1>
       </div>
-      <div className="col-span-2 row-start-2 row-end-4 p-4">
-        <Image
-          className="rounded-2xl"
-          src={"/pfp.jpeg"}
-          alt="profile picture"
-          width={400}
-          height={400}
-        />
-      </div>
-      <div className="col-start-3 col-end-7 row-span-2 mt-4">
-        <p className="text-2xl text-zinc-400">
-          I am a Full Stack developer and a 4th year computer science student
-          with hands-on co-op experiences and a number personal project
-          accomplishments. I pride myself in my adaptability in the workplace,
-          as well as my drive to create and improve the latest and greatest
-          technologies.
+      <div className="col-span-4 flex items-end">
+        <p className="mx-8 text-xl text-zinc-400">
+          Strong foundation in Full-Stack development. I started with Javascript
+          then eventually became a fully immersed Typescript developer. I also
+          use Tailwind on almost all of my own projects.
         </p>
       </div>
-      <div className="col-span-6">
+      <div className="col-span-4 row-start-3 flex items-center justify-center gap-8">
+        <div className="flex items-center">
+          <Image
+            className="mr-4 h-10 w-10"
+            src={"/html-logo.png"}
+            alt="html img"
+            width={100}
+            height={100}
+          />
+          <p className="text-xl font-bold text-default-text">HTML</p>
+        </div>
+        <div className="flex items-center">
+          <Image
+            className="mr-4 h-10 w-10"
+            src={"/css-logo.png"}
+            alt="css img"
+            width={100}
+            height={100}
+          />
+          <p className="text-xl font-bold text-default-text">CSS</p>
+        </div>
+        <div className="flex items-center">
+          <Image
+            className="mr-4 h-10 w-10"
+            src={"/ts-logo.png"}
+            alt="typescript img"
+            width={100}
+            height={100}
+          />
+          <p className="text-xl font-bold text-default-text">Typescript</p>
+        </div>
+        <div className="flex items-center">
+          <Image
+            className="mr-4 h-10 w-10"
+            src={"/tailwind-logo.png"}
+            alt="tailwind img"
+            width={100}
+            height={100}
+          />
+          <p className="text-xl font-bold text-default-text">Tailwind</p>
+        </div>
+      </div>
+      <div className="col-span-4 row-start-4">
         <Image
-          className="h-32 rounded-2xl object-cover"
-          src={"/stock computer image.jpg"}
-          alt="profile picture"
+          className="h-28 rounded-2xl object-cover"
+          src={"/code.jpeg"}
+          alt="stock image"
           width={1000}
           height={200}
         />
