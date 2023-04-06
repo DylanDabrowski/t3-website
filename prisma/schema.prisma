@@ -15,6 +15,7 @@ model Post {
     id          String   @id @default(cuid())
     createdAt   DateTime @default(now())
     updatedAt   DateTime @updatedAt
+    image       String
     title       String
     description String
     content     String?

@@ -5,10 +5,84 @@ import Image from "next/image";
 import { useEffect, useState } from "react";
 import { updateTextareaHeight } from "~/utils/functions";
 import Divider from "~/components/divider";
+import { api } from "~/utils/api";
+import { toast } from "react-hot-toast";
+import { v4 as uuidv4 } from "uuid";
+import ImageUploader from "~/components/imageuploader";
+
+type Block = {
+  id: string;
+  type: string;
+  content: string;
+};
 
 const MakePost: NextPage<{ id: string }> = ({ id }) => {
+  const [image, setImage] = useState<string>("");
   const [title, setTitle] = useState<string>("");
   const [subtitle, setSubtitle] = useState<string>("");
+  const [content, setContent] = useState<Block[]>([]);
+
+  const ctx = api.useContext();
+  const { mutate, isLoading: isPosting } = api.posts.create.useMutation({
+    onSuccess: () => {
+      void ctx.posts.getAll.invalidate();
+    },
+    onError: (e) => {
+      const errorMessage = e.data?.zodError?.fieldErrors.content;
+      if (errorMessage && errorMessage[0]) {
+        toast.error(errorMessage[0]);
+      } else {
+        toast.error("Failed to post! Please try again later.");
+      }
+    },
+  });
+
+  function addBlock(type: string) {
+    if (
+      type !== "text" &&
+      type !== "image" &&
+      type !== "video" &&
+      type !== "code"
+    ) {
+      toast.error("Invalid block type!");
+      return;
+    }
+    const newObject: Block = { id: uuidv4(), type: type, content: "" };
+    setContent([...content, newObject]);
+  }
+
+  function updateBlockContent(newContent: string, blockId: string) {
+    const newBlocks = content.map((block, i) => {
+      if (block.id == blockId) {
+        block.content = newContent;
+        return block;
+      } else {
+        return block;
+      }
+    });
+    setContent(newBlocks);
+  }
+
+  function getBlock(block: Block, type: string) {
+    switch (type) {
+      case "text":
+        return <TextBlock block={block} handleChange={updateBlockContent} />;
+      case "image":
+        return <ImageBlock block={block} handleChange={updateBlockContent} />;
+      case "video":
+        return <VideoBlock block={block} handleChange={updateBlockContent} />;
+      case "code":
+        return <CodeBlock block={block} handleChange={updateBlockContent} />;
+
+      default:
+        return <ErrorBlock />;
+    }
+  }
+
+  // just for logging, should be deleted later
+  useEffect(() => {
+    console.log(content);
+  }, [content]);
 
   return (
     <>
@@ -16,79 +90,78 @@ const MakePost: NextPage<{ id: string }> = ({ id }) => {
         <title>Make a Post</title>
       </Head>
       <PageLayout>
-        <div>
-          <p className="text-3xl font-bold text-default-text">Make a post</p>
-          <Divider space={30} />
-          <input
-            type="text"
-            className="w-full break-words bg-page-background text-5xl font-bold text-default-text"
-            placeholder="Title"
-            value={title}
-            onChange={(e) => {
-              setTitle(e.target.value);
-            }}
-          />
-          <textarea
-            className="no-scrollbar mb-12 mt-6 h-6 w-full resize-none bg-page-background font-extralight text-default-text"
-            placeholder="Subtitle"
-            value={subtitle}
-            onChange={(e) => {
-              updateTextareaHeight(e);
-              setSubtitle(e.target.value);
-            }}
-          />
+        <p className="text-3xl font-bold text-default-text">Make a post</p>
+        <Divider space={30} />
+        <ImageUploader id={uuidv4()} handleUpload={setImage} />
+        <input
+          type="text"
+          className="w-full break-words bg-page-background text-5xl font-bold text-default-text focus:outline-none"
+          placeholder="Title"
+          value={title}
+          onChange={(e) => {
+            setTitle(e.target.value);
+          }}
+        />
+        <textarea
+          className="no-scrollbar mb-12 mt-6 h-6 w-full resize-none border-none bg-page-background font-extralight text-default-text focus:outline-none"
+          placeholder="Subtitle"
+          value={subtitle}
+          onChange={(e) => {
+            updateTextareaHeight(e);
+            setSubtitle(e.target.value);
+          }}
+        />
 
-          {/* <div>
-        {blocks.map((block, index) => (
-          <div key={index}>{getBlock(block.type, block.id)}</div>
-        ))}
-      </div> */}
-          <div className="mt-10 flex h-6 w-full">
-            <div className="mt-2 h-[1px] w-full bg-zinc-700"></div>
-            <p className="absolute mb-2 ml-10 bg-page-background px-2 text-xs font-semibold text-zinc-700">
-              Add a new section to the post
-            </p>
-          </div>
-          <div className="mb-40 flex justify-between">
-            <div className="flex">
-              <AddButton
-                icon="/Add Text Button.svg"
-                text="Add Text"
-                handleClick={() => {
-                  console.log("Add Text");
-                }}
-              />
-              <AddButton
-                icon="/Add Image Button.svg"
-                text="Add Image"
-                handleClick={() => {
-                  console.log("Add Image");
-                }}
-              />
-              <AddButton
-                icon="/Add Video Button.svg"
-                text="Add Video"
-                handleClick={() => {
-                  console.log("Add Video");
-                }}
-              />
-              <AddButton
-                icon="/Add Code Button.svg"
-                text="Add Code"
-                handleClick={() => {
-                  console.log("Add Code");
-                }}
-              />
-            </div>
-            <button
-              className="text-md cursor-pointer rounded-lg bg-gradient-to-br from-green-100 to-blue-200 px-4 py-2 text-page-background shadow-md transition-shadow duration-150 active:shadow-none"
-              onClick={() => {
-                console.log("Upload");
+        <div>
+          {content.map((block, index) => (
+            <div key={index}>{getBlock(block, block.type)}</div>
+          ))}
+        </div>
+        <div className="mt-10 flex h-6 w-full">
+          <div className="mt-2 h-[1px] w-full bg-zinc-700"></div>
+          <p className="absolute mb-2 ml-10 bg-page-background px-2 text-xs font-semibold text-zinc-700">
+            Add a new section to the post
+          </p>
+        </div>
+        <div className="mb-40 flex justify-between">
+          <div className="flex">
+            <AddButton
+              icon="/Add Text Button.svg"
+              text="Add Text"
+              handleClick={() => {
+                addBlock("text");
               }}
-            >
-              Upload
-            </button>
+            />
+            <AddButton
+              icon="/Add Image Button.svg"
+              text="Add Image"
+              handleClick={() => {
+                addBlock("image");
+              }}
+            />
+            <AddButton
+              icon="/Add Video Button.svg"
+              text="Add Video"
+              handleClick={() => {
+                addBlock("video");
+              }}
+            />
+            <AddButton
+              icon="/Add Code Button.svg"
+              text="Add Code"
+              handleClick={() => {
+                addBlock("code");
+              }}
+            />
           </div>
+          <button
+            className="text-md cursor-pointer rounded-lg bg-gradient-to-br from-green-100 to-blue-200 px-4 py-2 text-page-background shadow-md transition-shadow duration-150 active:shadow-none"
+            onClick={() => {
+              console.log("Upload");
+            }}
+          >
+            Upload
+          </button>
         </div>
       </PageLayout>
     </>
@@ -115,6 +188,65 @@ function AddButton(props: {
       <p className="mr-6 text-sm tracking-wide text-default-text">
         {props.text}
       </p>
+    </div>
+  );
+}
+
+function TextBlock(props: {
+  block: Block;
+  handleChange: (newContent: string, blockId: string) => void;
+}) {
+  return (
+    <div>
+      <textarea
+        className="no-scrollbar my-2 w-full resize-none overflow-y-hidden rounded-xl border-2 bg-page-background p-4 font-extralight text-default-text"
+        placeholder="Start typing something ..."
+        onChange={(e) => {
+          updateTextareaHeight(e);
+          props.handleChange(e.target.value, props.block.id);
+        }}
+      />
+    </div>
+  );
+}
+
+function ImageBlock(props: {
+  block: Block;
+  handleChange: (newContent: string, blockId: string) => void;
+}) {
+  return (
+    <div>
+      <ImageUploader id={props.block.id} handleUpload={props.handleChange} />
+    </div>
+  );
+}
+
+function VideoBlock(props: {
+  block: Block;
+  handleChange: (newContent: string, blockId: string) => void;
+}) {
+  return (
+    <div>
+      <p>VideoBlock</p>
+    </div>
+  );
+}
+
+function CodeBlock(props: {
+  block: Block;
+  handleChange: (newContent: string, blockId: string) => void;
+}) {
+  return (
+    <div>
+      <p>CodeBlock</p>
+    </div>
+  );
+}
+
+function ErrorBlock() {
+  return (
+    <div>
+      <p>There was an error loading this block.</p>
     </div>
   );
 }

@@ -20,6 +20,7 @@ export const postsRouter = createTRPCRouter({
   create: publicProcedure
     .input(
       z.object({
+        image: z.string(),
         title: z.string(),
         description: z.string(),
         content: z.string()?.optional(),
@@ -28,6 +29,7 @@ export const postsRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       const post = await ctx.prisma.post.create({
         data: {
+          image: input.image,
           title: input.title,
           description: input.description,
           content: input.content,
