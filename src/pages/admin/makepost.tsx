@@ -2,6 +2,7 @@ import type { GetStaticProps, NextPage } from "next";
 import Head from "next/head";
 import { PageLayout } from "~/components/layout";
 import Image from "next/image";
+import dynamic from "next/dynamic";
 import { useEffect, useState } from "react";
 import { updateTextareaHeight } from "~/utils/functions";
 import Divider from "~/components/divider";
@@ -9,6 +10,7 @@ import { api } from "~/utils/api";
 import { toast } from "react-hot-toast";
 import { v4 as uuidv4 } from "uuid";
 import ImageUploader from "~/components/imageuploader";
+import "@uiw/react-textarea-code-editor/dist.css";
 
 type Block = {
   id: string;
@@ -232,13 +234,38 @@ function VideoBlock(props: {
   );
 }
 
+const CodeEditor = dynamic(
+  () => import("@uiw/react-textarea-code-editor").then((mod) => mod.default),
+  { ssr: false }
+);
+
 function CodeBlock(props: {
   block: Block;
   handleChange: (newContent: string, blockId: string) => void;
 }) {
+  const [code, setCode] = useState(`console.log("Hello World!")`);
   return (
     <div>
-      <p>CodeBlock</p>
+      <CodeEditor
+        value={code}
+        language="ts"
+        placeholder="Please enter TS code."
+        onChange={(e) => {
+          setCode(e.target.value);
+          props.handleChange(e.target.value, props.block.id);
+        }}
+        padding={15}
+        style={{
+          marginTop: 8,
+          marginBottom: 8,
+          borderRadius: 15,
+          fontSize: 12,
+          backgroundColor: "#222",
+          color: "#fff",
+          fontFamily:
+            "ui-monospace,SFMono-Regular,SF Mono,Consolas,Liberation Mono,Menlo,monospace",
+        }}
+      />
     </div>
   );
 }
