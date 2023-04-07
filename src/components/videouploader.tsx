@@ -2,17 +2,17 @@ import { useState } from "react";
 import Dropzone from "react-dropzone";
 import type { DropzoneState } from "react-dropzone";
 
-const ImageUploader = (props: {
+const VideoUploader = (props: {
   id: string;
   handleUpload: (imageUri: string, id: string) => void;
 }) => {
-  const [imageUrl, setImageUrl] = useState<string>("");
+  const [videoUrl, setVideoUrl] = useState<string>("");
 
   const handleOnDrop = (acceptedFiles: File[]) => {
     const file = acceptedFiles[0];
     if (file) {
       const objectUrl = URL.createObjectURL(file);
-      setImageUrl(objectUrl);
+      setVideoUrl(objectUrl);
       props.handleUpload(objectUrl, props.id);
     }
   };
@@ -42,14 +42,14 @@ const ImageUploader = (props: {
               isDragActive ? "border-green-500" : ""
             } flex flex-col items-center`}
           >
-            <input {...getInputProps()} accept=".png,.jpg,.jpeg" />
-            {imageUrl ? (
-              <img src={imageUrl} alt="uploaded image" />
+            <input {...getInputProps()} accept=".mp4,.gif" />
+            {videoUrl ? (
+              <video src={videoUrl} controls></video>
             ) : (
               <p className="text-gray-500">
                 {isDragActive
-                  ? "Drop the image file here"
-                  : "Drag and drop a PNG or JPG/JPEG image file here, or click to select a file"}
+                  ? "Drop the video file here"
+                  : "Drag and drop an MP4 or GIF file here, or click to select a file"}
               </p>
             )}
           </div>
@@ -59,4 +59,4 @@ const ImageUploader = (props: {
   );
 };
 
-export default ImageUploader;
+export default VideoUploader;

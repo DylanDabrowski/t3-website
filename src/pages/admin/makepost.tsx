@@ -11,6 +11,7 @@ import { toast } from "react-hot-toast";
 import { v4 as uuidv4 } from "uuid";
 import ImageUploader from "~/components/imageuploader";
 import "@uiw/react-textarea-code-editor/dist.css";
+import VideoUploader from "~/components/videouploader";
 
 type Block = {
   id: string;
@@ -229,7 +230,7 @@ function VideoBlock(props: {
 }) {
   return (
     <div>
-      <p>VideoBlock</p>
+      <VideoUploader id={props.block.id} handleUpload={props.handleChange}/>
     </div>
   );
 }
