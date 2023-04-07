@@ -1,3 +1,6 @@
+import dotenv from "dotenv";
+dotenv.config();
+
 // next.config.mjs
 import removeImports from "next-remove-imports";
 

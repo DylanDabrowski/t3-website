@@ -1,34 +1,27 @@
 import { useState } from "react";
 import Dropzone from "react-dropzone";
 import type { DropzoneState } from "react-dropzone";
+import { toast } from "react-hot-toast";
 
 const VideoUploader = (props: {
   id: string;
   handleUpload: (imageUri: string, id: string) => void;
 }) => {
   const [videoUrl, setVideoUrl] = useState<string>("");
+  const [isGif, setIsGif] = useState<boolean>(false);
 
   const handleOnDrop = (acceptedFiles: File[]) => {
     const file = acceptedFiles[0];
     if (file) {
+      if (file.type !== "image/gif" && file.type !== "video/mp4") {
+        toast.error("Only GIF and MP4 files are allowed");
+        return;
+      }
       const objectUrl = URL.createObjectURL(file);
       setVideoUrl(objectUrl);
+      setIsGif(file.type === "image/gif");
       props.handleUpload(objectUrl, props.id);
     }
-  };
-
-  const dropzoneStyle: React.CSSProperties = {
-    borderWidth: 2,
-    borderColor: "#666",
-    borderStyle: "dashed",
-    borderRadius: 5,
-    margin: "1rem",
-    padding: "1rem",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    textAlign: "center",
-    cursor: "pointer",
   };
 
   return (
@@ -37,14 +30,22 @@ const VideoUploader = (props: {
         {({ getRootProps, getInputProps, isDragActive }: DropzoneState) => (
           <div
             {...getRootProps()}
-            style={dropzoneStyle}
-            className={`${
+            className={`my-4 w-full rounded-md border-2 border-dashed border-gray-600 p-8 ${
               isDragActive ? "border-green-500" : ""
-            } flex flex-col items-center`}
+            } flex cursor-pointer flex-col items-center`}
           >
             <input {...getInputProps()} accept=".mp4,.gif" />
             {videoUrl ? (
-              <video src={videoUrl} controls></video>
+              isGif ? (
+                <img
+                  src={videoUrl}
+                  style={{ width: "100%" }}
+                  alt="uploaded gif"
+                  className="animated infinite"
+                />
+              ) : (
+                <video src={videoUrl} controls></video>
+              )
             ) : (
               <p className="text-gray-500">
                 {isDragActive

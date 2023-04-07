@@ -12,6 +12,9 @@ import { v4 as uuidv4 } from "uuid";
 import ImageUploader from "~/components/imageuploader";
 import "@uiw/react-textarea-code-editor/dist.css";
 import VideoUploader from "~/components/videouploader";
+import { useUser } from "@clerk/clerk-react";
+import { SignIn, SignInButton, SignOutButton } from "@clerk/nextjs";
+import { env } from "../../env.mjs";
 
 type Block = {
   id: string;
@@ -82,10 +85,30 @@ const MakePost: NextPage<{ id: string }> = ({ id }) => {
     }
   }
 
-  // just for logging, should be deleted later
-  useEffect(() => {
-    console.log(content);
-  }, [content]);
+  const { user, isLoaded } = useUser();
+
+  if (!user || !isLoaded) {
+    return (
+      <PageLayout>
+        <div className="flex w-full justify-center">
+          <SignIn redirectUrl={"/admin/makepost"} />
+        </div>
+      </PageLayout>
+    );
+  } else if (user.id !== env.NEXT_PUBLIC_ADMINID) {
+    return (
+      <PageLayout>
+        <div className="flex w-full flex-col items-center">
+          <p className="mb-10 text-3xl font-bold text-default-text">
+            You are not authorized to view this page.
+          </p>
+          <SignOutButton>
+            <button className="font-bold text-default-text">Sign out</button>
+          </SignOutButton>
+        </div>
+      </PageLayout>
+    );
+  }
 
   return (
     <>
@@ -93,7 +116,12 @@ const MakePost: NextPage<{ id: string }> = ({ id }) => {
         <title>Make a Post</title>
       </Head>
       <PageLayout>
-        <p className="text-3xl font-bold text-default-text">Make a post</p>
+        <div className="flex justify-between">
+          <p className="text-3xl font-bold text-default-text">Make a post</p>
+          <SignOutButton>
+            <button className="font-bold text-default-text">Sign out</button>
+          </SignOutButton>
+        </div>
         <Divider space={30} />
         <ImageUploader id={uuidv4()} handleUpload={setImage} />
         <input
@@ -230,7 +258,7 @@ function VideoBlock(props: {
 }) {
   return (
     <div>
-      <VideoUploader id={props.block.id} handleUpload={props.handleChange}/>
+      <VideoUploader id={props.block.id} handleUpload={props.handleChange} />
     </div>
   );
 }
