@@ -25,12 +25,26 @@ type Block = {
 const MakePost: NextPage<{ id: string }> = ({ id }) => {
   const [image, setImage] = useState<string>("");
   const [title, setTitle] = useState<string>("");
-  const [subtitle, setSubtitle] = useState<string>("");
-  const [content, setContent] = useState<Block[]>([]);
+  const [description, setDescription] = useState<string>("");
+  const [content, setContent] = useState<
+    {
+      id: string;
+      type: string;
+      content: string;
+    }[]
+  >([]);
+
+  const resetInputs = () => {
+    setImage("");
+    setTitle("");
+    setDescription("");
+    setContent([]);
+  };
 
   const ctx = api.useContext();
   const { mutate, isLoading: isPosting } = api.posts.create.useMutation({
     onSuccess: () => {
+      resetInputs();
       void ctx.posts.getAll.invalidate();
     },
     onError: (e) => {
@@ -135,11 +149,11 @@ const MakePost: NextPage<{ id: string }> = ({ id }) => {
         />
         <textarea
           className="no-scrollbar mb-12 mt-6 h-6 w-full resize-none border-none bg-page-background font-extralight text-default-text focus:outline-none"
-          placeholder="Subtitle"
-          value={subtitle}
+          placeholder="Description"
+          value={description}
           onChange={(e) => {
             updateTextareaHeight(e);
-            setSubtitle(e.target.value);
+            setDescription(e.target.value);
           }}
         />
 
@@ -188,7 +202,12 @@ const MakePost: NextPage<{ id: string }> = ({ id }) => {
           <button
             className="text-md cursor-pointer rounded-lg bg-gradient-to-br from-green-100 to-blue-200 px-4 py-2 text-page-background shadow-md transition-shadow duration-150 active:shadow-none"
             onClick={() => {
-              console.log("Upload");
+              mutate({
+                title: title,
+                description: description,
+                content: content,
+                image: image,
+              });
             }}
           >
             Upload

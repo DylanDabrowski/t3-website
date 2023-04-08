@@ -23,6 +23,7 @@ const ImageUploader = (props: {
       const objectUrl = URL.createObjectURL(file);
       setImageUrl(objectUrl);
       props.handleUpload(objectUrl, props.id);
+      console.log(objectUrl);
     }
   };
 

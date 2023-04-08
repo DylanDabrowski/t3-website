@@ -21,6 +21,7 @@ const VideoUploader = (props: {
       setVideoUrl(objectUrl);
       setIsGif(file.type === "image/gif");
       props.handleUpload(objectUrl, props.id);
+      console.log(objectUrl);
     }
   };
 

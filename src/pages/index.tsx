@@ -13,19 +13,6 @@ import { api } from "~/utils/api";
 const Home: NextPage = () => {
   const ctx = api.useContext();
   const { data, isLoading: postsLoading } = api.posts.getAll.useQuery();
-  const { mutate, isLoading: isPosting } = api.posts.create.useMutation({
-    onSuccess: () => {
-      void ctx.posts.getAll.invalidate();
-    },
-    onError: (e) => {
-      const errorMessage = e.data?.zodError?.fieldErrors.content;
-      if (errorMessage && errorMessage[0]) {
-        toast.error(errorMessage[0]);
-      } else {
-        toast.error("Failed to post! Please try again later.");
-      }
-    },
-  });
 
   return (
     <>
@@ -37,32 +24,32 @@ const Home: NextPage = () => {
       <PageLayout>
         <Hero />
         <AboutMe />
-        <Link href={""}>
-          <BlogCard
-            title={"Working with Threejs"}
-            description={
-              "Making a 3D scene in Threejs, for a web portfolio with a twist."
-            }
-            date={""}
-            imageUri={""}
-          />
-        </Link>
-        {/* <SignIn />
-          <SignOutButton />
-          <button
-            onClick={() =>
-              mutate({
-                title: "Hello World!",
-                description: "hello there world",
-                content: JSON.stringify({
-                  type: "text",
-                  content: "i love coding!",
-                }),
-              })
-            }
-          >
-            Post
-          </button> */}
+        {postsLoading ? (
+          <p>Loading</p>
+        ) : data ? (
+          data.map((post) => (
+            <Link href={""} key={post.id}>
+              <BlogCard
+                title={post.title ? post.title : "Untitled"}
+                description={
+                  post.description ? post.description : "No description"
+                }
+                date={
+                  post.createdAt
+                    ? post.createdAt.toLocaleDateString("en-US", {
+                        year: "numeric",
+                        month: "long",
+                        day: "numeric",
+                      })
+                    : ""
+                }
+                imageUri={post.image ? post.image : ""}
+              />
+            </Link>
+          ))
+        ) : (
+          <p>Failed to load posts</p>
+        )}
       </PageLayout>
     </>
   );
