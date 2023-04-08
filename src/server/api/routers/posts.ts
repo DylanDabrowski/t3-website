@@ -36,9 +36,21 @@ export const postsRouter = createTRPCRouter({
           image: input.image,
           title: input.title,
           description: input.description,
-          content: JSON.stringify({ items: input.content }),
+          content: input.content,
         },
       });
+
+      return post;
+    }),
+
+  getById: publicProcedure
+    .input(z.object({ id: z.string() }))
+    .query(async ({ ctx, input }) => {
+      const post = await ctx.prisma.post.findUnique({
+        where: { id: input.id },
+      });
+
+      if (!post) throw new TRPCError({ code: "NOT_FOUND" });
 
       return post;
     }),

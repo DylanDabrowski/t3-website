@@ -28,7 +28,7 @@ const Home: NextPage = () => {
           <p>Loading</p>
         ) : data ? (
           data.map((post) => (
-            <Link href={""} key={post.id}>
+            <Link href={`/post/${post.id}`} key={post.id}>
               <BlogCard
                 title={post.title ? post.title : "Untitled"}
                 description={
