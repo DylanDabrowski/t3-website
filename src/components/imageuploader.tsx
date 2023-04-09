@@ -1,73 +1,91 @@
-import { useState } from "react";
-import Dropzone from "react-dropzone";
-import type { DropzoneState } from "react-dropzone";
-import { toast } from "react-hot-toast";
-import AWS from "aws-sdk";
+import { useCallback, useMemo, useState } from "react";
+import { useDropzone } from "react-dropzone";
 import axios from "axios";
-import { uploadToS3 } from "~/utils/s3";
 
-const s3 = new AWS.S3();
+import { api } from "~/utils/api";
 
-interface UploadResponse {
-  imageUrl: string;
-}
+export const StandardDropzone = () => {
+  const [presignedUrl, setPresignedUrl] = useState<string | null>(null);
+  const { mutateAsync: fetchPresignedUrls } =
+    api.s3.getStandardUploadPresignedUrl.useMutation();
+  const [submitDisabled, setSubmitDisabled] = useState(true);
+  const apiUtils = api.useContext();
 
-const ImageUploader = (props: {
-  id: string;
-  handleUpload: (imageUri: string, id: string) => void;
-}) => {
-  const [imageUrl, setImageUrl] = useState<string>("");
+  const { getRootProps, getInputProps, isDragActive, acceptedFiles } =
+    useDropzone({
+      maxFiles: 1,
+      maxSize: 5 * 2 ** 30, // roughly 5GB
+      multiple: false,
+      onDropAccepted: (files, _event) => {
+        const file = files[0] as File;
 
-  const uploadImage = async (file: File) => {
-    try {
-      const data = await uploadToS3(file, props.id);
-      console.log(data);
-    } catch (error) {
-      console.log(error);
-      toast.error("Error uploading file to S3");
+        fetchPresignedUrls({
+          key: file.name,
+        })
+          .then((url) => {
+            setPresignedUrl(url);
+            setSubmitDisabled(false);
+          })
+          .catch((err) => console.error(err));
+      },
+    });
+
+  const files = useMemo(() => {
+    if (!submitDisabled)
+      return acceptedFiles.map((file) => (
+        <li key={file.name}>
+          {file.name} - {file.size} bytes
+        </li>
+      ));
+    return null;
+  }, [acceptedFiles, submitDisabled]);
+
+  const handleSubmit = useCallback(async () => {
+    if (acceptedFiles.length > 0 && presignedUrl !== null) {
+      const file = acceptedFiles[0] as File;
+      await axios
+        .put(presignedUrl, file.slice(), {
+          headers: { "Content-Type": file.type },
+        })
+        .then((response) => {
+          console.log(response);
+          console.log("Successfully uploaded ", file.name);
+        })
+        .catch((err) => console.error(err));
+      setSubmitDisabled(true);
+      await apiUtils.s3.getObjects.invalidate();
     }
-  };
-
-  const handleOnDrop = (acceptedFiles: File[]) => {
-    const file = acceptedFiles[0];
-    if (file) {
-      if (
-        file.type !== "image/png" &&
-        file.type !== "image/jpeg" &&
-        file.type !== "image/jpg"
-      ) {
-        toast.error("Only PNG and JPG/JPEG files are allowed");
-        return;
-      }
-      void uploadImage(file);
-    }
-  };
+  }, [acceptedFiles, apiUtils.s3.getObjects, presignedUrl]);
 
   return (
-    <div className="flex flex-col items-center">
-      <Dropzone onDrop={handleOnDrop}>
-        {({ getRootProps, getInputProps, isDragActive }: DropzoneState) => (
-          <div
-            {...getRootProps()}
-            className={`my-4 w-full rounded-md border-2 border-dashed border-gray-600 p-8 ${
-              isDragActive ? "border-green-500" : ""
-            } flex cursor-pointer flex-col items-center`}
-          >
-            <input {...getInputProps()} accept=".png,.jpg,.jpeg" />
-            {imageUrl ? (
-              <img className="max-w-full" src={imageUrl} alt="uploaded image" />
-            ) : (
-              <p className="text-gray-500">
-                {isDragActive
-                  ? "Drop the image file here"
-                  : "Drag and drop a PNG or JPG/JPEG image file here, or click to select a file"}
-              </p>
-            )}
+    <section>
+      <h2 className="text-lg font-semibold">Standard Dropzone</h2>
+      <p className="mb-3">Simple example for uploading one file at a time</p>
+      <div {...getRootProps()} className="dropzone-container">
+        <input {...getInputProps()} />
+        {isDragActive ? (
+          <div className="flex h-full items-center justify-center font-semibold">
+            <p>Drop the file here...</p>
+          </div>
+        ) : (
+          <div className="flex h-full items-center justify-center font-semibold">
+            <p>Drag n drop file here, or click to select files</p>
           </div>
         )}
-      </Dropzone>
-    </div>
+      </div>
+      <aside className="my-2">
+        <h4 className="font-semibold text-zinc-400">Files pending upload</h4>
+        <ul>{files}</ul>
+      </aside>
+      <button
+        onClick={() => void handleSubmit()}
+        disabled={
+          presignedUrl === null || acceptedFiles.length === 0 || submitDisabled
+        }
+        className="submit-button"
+      >
+        Upload
+      </button>
+    </section>
   );
 };
-
-export default ImageUploader;

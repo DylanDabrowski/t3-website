@@ -1,3 +1,13 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer components {
+    .dropzone-container {
+      @apply flex h-[300px] w-[300px] flex-col items-center justify-between rounded-lg border text-center border-zinc-500 bg-zinc-200 p-[40px] py-8 align-middle text-zinc-500 shadow-inner;
+    }
+  
+    .submit-button {
+      @apply px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-800 disabled:opacity-70 disabled:hover:bg-blue-600 disabled:cursor-not-allowed duration-150
+    }
+  }
