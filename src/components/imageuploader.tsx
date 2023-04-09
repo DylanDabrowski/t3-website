@@ -2,12 +2,31 @@ import { useState } from "react";
 import Dropzone from "react-dropzone";
 import type { DropzoneState } from "react-dropzone";
 import { toast } from "react-hot-toast";
+import AWS from "aws-sdk";
+import axios from "axios";
+import { uploadToS3 } from "~/utils/s3";
+
+const s3 = new AWS.S3();
+
+interface UploadResponse {
+  imageUrl: string;
+}
 
 const ImageUploader = (props: {
   id: string;
   handleUpload: (imageUri: string, id: string) => void;
 }) => {
   const [imageUrl, setImageUrl] = useState<string>("");
+
+  const uploadImage = async (file: File) => {
+    try {
+      const data = await uploadToS3(file, props.id);
+      console.log(data);
+    } catch (error) {
+      console.log(error);
+      toast.error("Error uploading file to S3");
+    }
+  };
 
   const handleOnDrop = (acceptedFiles: File[]) => {
     const file = acceptedFiles[0];
@@ -20,10 +39,7 @@ const ImageUploader = (props: {
         toast.error("Only PNG and JPG/JPEG files are allowed");
         return;
       }
-      const objectUrl = URL.createObjectURL(file);
-      setImageUrl(objectUrl);
-      props.handleUpload(objectUrl, props.id);
-      console.log(objectUrl);
+      void uploadImage(file);
     }
   };
 

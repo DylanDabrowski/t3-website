@@ -2,6 +2,9 @@ import { useState } from "react";
 import Dropzone from "react-dropzone";
 import type { DropzoneState } from "react-dropzone";
 import { toast } from "react-hot-toast";
+import AWS from "aws-sdk";
+
+const s3 = new AWS.S3();
 
 const VideoUploader = (props: {
   id: string;
@@ -10,6 +13,25 @@ const VideoUploader = (props: {
   const [videoUrl, setVideoUrl] = useState<string>("");
   const [isGif, setIsGif] = useState<boolean>(false);
 
+  const uploadToS3 = async (file: File) => {
+    // Upload the file to S3
+    const s3Params = {
+      Bucket: "t3-website-dylandabrowski",
+      Key: `${props.id}/${file.name}`,
+      Body: file,
+      ContentType: file.type,
+    };
+
+    try {
+      const data = await s3.upload(s3Params).promise();
+      setVideoUrl(data.Location);
+      props.handleUpload(data.Location, props.id);
+      console.log(data.Location);
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
   const handleOnDrop = (acceptedFiles: File[]) => {
     const file = acceptedFiles[0];
     if (file) {
@@ -17,11 +39,8 @@ const VideoUploader = (props: {
         toast.error("Only GIF and MP4 files are allowed");
         return;
       }
-      const objectUrl = URL.createObjectURL(file);
-      setVideoUrl(objectUrl);
+      void uploadToS3(file);
       setIsGif(file.type === "image/gif");
-      props.handleUpload(objectUrl, props.id);
-      console.log(objectUrl);
     }
   };
 
