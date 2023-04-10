@@ -1,6 +1,7 @@
 import * as React from "react";
 import { motion, useAnimation } from "framer-motion";
 import Image from "next/image";
+import wave from "../assets/wave.png";
 
 const getRandomTransformOrigin = () => {
   const value = (16 + 40 * Math.random()) / 100;
@@ -40,13 +41,7 @@ export default function ShakingImage() {
       variants={variants}
       animate={"start"}
     >
-      <Image
-        className=""
-        src={"/wave3.png"}
-        alt="wave svg"
-        width={100}
-        height={100}
-      />
+      <Image className="" src={wave} alt="wave svg" width={100} height={100} />
     </motion.div>
   );
 }

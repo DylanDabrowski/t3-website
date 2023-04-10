@@ -1,5 +1,4 @@
-import dotenv from "dotenv";
-dotenv.config();
+import { env } from "./src/env.mjs";
 
 // next.config.mjs
 import removeImports from "next-remove-imports";
@@ -26,7 +25,7 @@ const config = {
   },
 
   images: {
-    domains: [],
+    domains: [`${env.BUCKET_NAME}.s3.${env.REGION}.amazonaws.com`],
   },
 };
 

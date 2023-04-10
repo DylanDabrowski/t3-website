@@ -17,9 +17,30 @@ export const s3Router = createTRPCRouter({
     return listObjectsOutput.Contents ?? [];
   }),
 
-  getStandardUploadPresignedUrl: publicProcedure
+  getObjectByKey: publicProcedure
     .input(z.object({ key: z.string() }))
     .query(async ({ ctx, input }) => {
+      const { key } = input;
+      const { s3 } = ctx;
+
+      const object = await s3.getObject({
+        Bucket: env.BUCKET_NAME,
+        Key: key,
+      });
+
+      if (!object) {
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Could not find object with the given key",
+        });
+      }
+
+      return { Body: object };
+    }),
+
+  getStandardUploadPresignedUrl: publicProcedure
+    .input(z.object({ key: z.string() }))
+    .mutation(async ({ ctx, input }) => {
       const { key } = input;
       const { s3 } = ctx;
 

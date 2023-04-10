@@ -9,7 +9,7 @@ import Divider from "~/components/divider";
 import { api } from "~/utils/api";
 import { toast } from "react-hot-toast";
 import { v4 as uuidv4 } from "uuid";
-import ImageUploader from "~/components/imageuploader";
+import { ImageUploader } from "~/components/imageuploader";
 import "@uiw/react-textarea-code-editor/dist.css";
 import VideoUploader from "~/components/videouploader";
 import { useUser } from "@clerk/clerk-react";

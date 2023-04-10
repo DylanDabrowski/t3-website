@@ -39,19 +39,23 @@ export default function AboutMe() {
   );
 }
 
+import yellowCircle from "../assets/yellow-circle.svg";
+import aboutMeText from "../assets/ABOUT ME.svg";
 function SpinningSun() {
   return (
     <div className="relative">
       <Image
         className="absolute left-8 top-8"
-        src={"/yellow-circle.svg"}
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+        src={yellowCircle}
         alt="yellow circle"
         width={61}
         height={61}
       />
       <Image
         className="absolute left-0 top-0 animate-spin-slow"
-        src={"/ABOUT ME.svg"}
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+        src={aboutMeText}
         alt="yellow circle"
         width={125}
         height={125}
@@ -94,6 +98,7 @@ function Waves() {
   );
 }
 
+import pfp from "../assets/pfp.jpeg";
 function Card1() {
   return (
     <div className="grid grid-cols-6 grid-rows-4 gap-1">
@@ -107,7 +112,7 @@ function Card1() {
       <div className="col-span-2 row-start-2 row-end-4 p-4">
         <Image
           className="rounded-2xl"
-          src={"/pfp.jpeg"}
+          src={pfp}
           alt="profile picture"
           width={400}
           height={400}
@@ -131,6 +136,11 @@ function Card1() {
   );
 }
 
+import htmlLogo from "../assets/html-logo.png";
+import cssLogo from "../assets/css-logo.png";
+import tsLogo from "../assets/ts-logo.png";
+import tailwindLogo from "../assets/tailwind-logo.png";
+import code from "../assets/code.jpeg";
 function Card2() {
   return (
     <div className="grid grid-cols-4 grid-rows-4 gap-1">
@@ -148,7 +158,7 @@ function Card2() {
         <div className="flex items-center">
           <Image
             className="mr-4 h-10 w-10"
-            src={"/html-logo.png"}
+            src={htmlLogo}
             alt="html img"
             width={100}
             height={100}
@@ -158,7 +168,7 @@ function Card2() {
         <div className="flex items-center">
           <Image
             className="mr-4 h-10 w-10"
-            src={"/css-logo.png"}
+            src={cssLogo}
             alt="css img"
             width={100}
             height={100}
@@ -168,7 +178,7 @@ function Card2() {
         <div className="flex items-center">
           <Image
             className="mr-4 h-10 w-10"
-            src={"/ts-logo.png"}
+            src={tsLogo}
             alt="typescript img"
             width={100}
             height={100}
@@ -178,7 +188,7 @@ function Card2() {
         <div className="flex items-center">
           <Image
             className="mr-4 h-10 w-10"
-            src={"/tailwind-logo.png"}
+            src={tailwindLogo}
             alt="tailwind img"
             width={100}
             height={100}
@@ -189,7 +199,7 @@ function Card2() {
       <div className="col-span-4 row-start-4">
         <Image
           className="h-28 rounded-2xl object-cover"
-          src={"/code.jpeg"}
+          src={code}
           alt="stock image"
           width={1000}
           height={200}

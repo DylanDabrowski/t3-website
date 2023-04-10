@@ -2,14 +2,28 @@ import { useCallback, useMemo, useState } from "react";
 import { useDropzone } from "react-dropzone";
 import axios from "axios";
 
-import { api } from "~/utils/api";
+import { api } from "../utils/api";
+import Image from "next/image";
 
-export const StandardDropzone = () => {
-  const [presignedUrl, setPresignedUrl] = useState<string | null>(null);
+function removeQueryString(input: string): string {
+  const queryStringIndex = input.indexOf("?");
+  if (queryStringIndex === -1) {
+    return input; // No query string found
+  } else {
+    return input.slice(0, queryStringIndex);
+  }
+}
+
+export const ImageUploader = (props: {
+  id: string;
+  handleUpload: (imageUri: string, id: string) => void;
+}) => {
   const { mutateAsync: fetchPresignedUrls } =
     api.s3.getStandardUploadPresignedUrl.useMutation();
-  const [submitDisabled, setSubmitDisabled] = useState(true);
   const apiUtils = api.useContext();
+
+  const [fileUrl, setFileUrl] = useState<string>("");
+  const [fileType, setFileType] = useState<string>("");
 
   const { getRootProps, getInputProps, isDragActive, acceptedFiles } =
     useDropzone({
@@ -18,74 +32,83 @@ export const StandardDropzone = () => {
       multiple: false,
       onDropAccepted: (files, _event) => {
         const file = files[0] as File;
+        acceptedFiles[0] = file;
 
         fetchPresignedUrls({
           key: file.name,
         })
           .then((url) => {
-            setPresignedUrl(url);
-            setSubmitDisabled(false);
+            void handleSubmit(url);
           })
           .catch((err) => console.error(err));
       },
     });
 
-  const files = useMemo(() => {
-    if (!submitDisabled)
-      return acceptedFiles.map((file) => (
-        <li key={file.name}>
-          {file.name} - {file.size} bytes
-        </li>
-      ));
-    return null;
-  }, [acceptedFiles, submitDisabled]);
-
-  const handleSubmit = useCallback(async () => {
-    if (acceptedFiles.length > 0 && presignedUrl !== null) {
-      const file = acceptedFiles[0] as File;
-      await axios
-        .put(presignedUrl, file.slice(), {
-          headers: { "Content-Type": file.type },
-        })
-        .then((response) => {
-          console.log(response);
-          console.log("Successfully uploaded ", file.name);
-        })
-        .catch((err) => console.error(err));
-      setSubmitDisabled(true);
-      await apiUtils.s3.getObjects.invalidate();
-    }
-  }, [acceptedFiles, apiUtils.s3.getObjects, presignedUrl]);
+  const handleSubmit = async (url: string) => {
+    if (!acceptedFiles[0]) return;
+    await axios
+      .put(url, acceptedFiles[0], {
+        headers: { "Content-Type": acceptedFiles[0].type },
+      })
+      .then((response) => {
+        console.log("Successfully uploaded ", acceptedFiles[0]?.name);
+        // redundant if statement to remove dumb "this is possibly undefined" error im not a terrible coder i promise
+        if (acceptedFiles[0]) {
+          setFileType(acceptedFiles[0].type);
+        }
+        setFileUrl(removeQueryString(url));
+      })
+      .catch((err) => console.error(err));
+    await apiUtils.s3.getObjects.invalidate();
+  };
 
   return (
     <section>
-      <h2 className="text-lg font-semibold">Standard Dropzone</h2>
-      <p className="mb-3">Simple example for uploading one file at a time</p>
-      <div {...getRootProps()} className="dropzone-container">
-        <input {...getInputProps()} />
-        {isDragActive ? (
-          <div className="flex h-full items-center justify-center font-semibold">
-            <p>Drop the file here...</p>
-          </div>
-        ) : (
-          <div className="flex h-full items-center justify-center font-semibold">
-            <p>Drag n drop file here, or click to select files</p>
-          </div>
-        )}
-      </div>
-      <aside className="my-2">
-        <h4 className="font-semibold text-zinc-400">Files pending upload</h4>
-        <ul>{files}</ul>
-      </aside>
-      <button
-        onClick={() => void handleSubmit()}
-        disabled={
-          presignedUrl === null || acceptedFiles.length === 0 || submitDisabled
-        }
-        className="submit-button"
-      >
-        Upload
-      </button>
+      {isDragActive ? (
+        <div
+          {...getRootProps()}
+          className="my-4 w-full rounded-md border-2 border-dashed border-blue-600 p-8"
+        >
+          <input {...getInputProps()} />
+          {fileUrl ? (
+            <Image
+              className="h-full max-w-full"
+              src={fileUrl}
+              alt="uploaded image"
+              width={1440}
+              height={1440}
+            />
+          ) : (
+            <div className="flex h-full items-center justify-center font-semibold text-blue-600">
+              <p>
+                Drag and drop a file, or click to select one from your device.
+              </p>
+            </div>
+          )}
+        </div>
+      ) : (
+        <div
+          {...getRootProps()}
+          className="my-4 flex w-full items-center justify-center rounded-md border-2 border-dashed border-gray-600 p-8"
+        >
+          <input {...getInputProps()} />
+          {fileUrl ? (
+            <Image
+              className="h-full max-w-full"
+              src={fileUrl}
+              alt="uploaded image"
+              width={1440}
+              height={1440}
+            />
+          ) : (
+            <div className="flex h-full items-center justify-center font-semibold text-gray-600">
+              <p>
+                Drag and drop a file, or click to select one from your device.
+              </p>
+            </div>
+          )}
+        </div>
+      )}
     </section>
   );
 };

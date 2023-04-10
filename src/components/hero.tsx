@@ -1,13 +1,19 @@
 import React from "react";
 import Image from "next/image";
 
+import pfp from "../assets/pfp.jpeg";
+import linkedinIcon from "../assets/gradient linkedin.svg";
+import instagramIcon from "../assets/gradient instagram.svg";
+import githubIcon from "../assets/gradient github.svg";
+import mailIcon from "../assets/gradient mail.svg";
+
 export default function Hero() {
   return (
     <div className="mb-10">
       <div className="flex items-center">
         <Image
           className="mr-10 rounded-full bg-gradient-to-br from-green-100 to-blue-200 p-1"
-          src={"/pfp.jpeg"}
+          src={pfp}
           alt={"profile picture"}
           width={80}
           height={80}
@@ -22,44 +28,75 @@ export default function Hero() {
         me, my work, and some of my latest projects.
       </p>
       <div className="mt-4 flex items-center">
-        <SocialMedia
-          icon={"/gradient linkedin.svg"}
-          text={"LinkedIn"}
-          link="https://www.linkedin.com/in/dylandabrowski/"
-        />
-        <SocialMedia
-          icon={"/gradient instagram.svg"}
-          text={"Instagram"}
-          link="https://www.instagram.com/dylandabrowski/"
-        />
-        <SocialMedia
-          icon={"/gradient github.svg"}
-          text={"Github"}
-          link="https://github.com/DylanDabrowski"
-        />
-        <SocialMedia
-          icon={"/gradient mail.svg"}
-          text={"Mail"}
-          link="mailto:dylandabrowski@gmail.com"
-        />
+        <a
+          href={"https://www.linkedin.com/in/dylandabrowski/"}
+          className="flex items-center"
+          target="_blank"
+        >
+          <Image
+            className="mr-2"
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+            src={linkedinIcon}
+            alt={"linkedin icon"}
+            width={24}
+            height={24}
+          />
+          <p className="text-md mr-6 font-bold tracking-wide text-default-text">
+            LinkedIn
+          </p>
+        </a>
+        <a
+          href={"https://www.instagram.com/dylandabrowski/"}
+          className="flex items-center"
+          target="_blank"
+        >
+          <Image
+            className="mr-2"
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+            src={instagramIcon}
+            alt={"instagram icon"}
+            width={24}
+            height={24}
+          />
+          <p className="text-md mr-6 font-bold tracking-wide text-default-text">
+            Instagram
+          </p>
+        </a>
+        <a
+          href={"https://github.com/DylanDabrowski"}
+          className="flex items-center"
+          target="_blank"
+        >
+          <Image
+            className="mr-2"
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+            src={githubIcon}
+            alt={"github icon"}
+            width={24}
+            height={24}
+          />
+          <p className="text-md mr-6 font-bold tracking-wide text-default-text">
+            Github
+          </p>
+        </a>
+        <a
+          href={"mailto:dylandabrowski@gmail.com"}
+          className="flex items-center"
+          target="_blank"
+        >
+          <Image
+            className="mr-2"
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+            src={mailIcon}
+            alt={"mail icon"}
+            width={24}
+            height={24}
+          />
+          <p className="text-md mr-6 font-bold tracking-wide text-default-text">
+            Mail
+          </p>
+        </a>
       </div>
     </div>
-  );
-}
-
-function SocialMedia(props: { icon: string; text: string; link: string }) {
-  return (
-    <a href={props.link} className="flex items-center" target="_blank">
-      <Image
-        className="mr-2"
-        src={props.icon}
-        alt={props.icon + " icon"}
-        width={24}
-        height={24}
-      />
-      <p className="text-md mr-6 font-bold tracking-wide text-default-text">
-        {props.text}
-      </p>
-    </a>
   );
 }
