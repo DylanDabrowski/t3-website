@@ -9,9 +9,8 @@ import Divider from "~/components/divider";
 import { api } from "~/utils/api";
 import { toast } from "react-hot-toast";
 import { v4 as uuidv4 } from "uuid";
-import { ImageUploader } from "~/components/imageuploader";
+import { FileUploader } from "~/components/fileuploader";
 import "@uiw/react-textarea-code-editor/dist.css";
-import VideoUploader from "~/components/videouploader";
 import { useUser } from "@clerk/clerk-react";
 import { SignIn, SignInButton, SignOutButton } from "@clerk/nextjs";
 import { env } from "../../env.mjs";
@@ -58,12 +57,7 @@ const MakePost: NextPage<{ id: string }> = ({ id }) => {
   });
 
   function addBlock(type: string) {
-    if (
-      type !== "text" &&
-      type !== "image" &&
-      type !== "video" &&
-      type !== "code"
-    ) {
+    if (type !== "text" && type !== "file" && type !== "code") {
       toast.error("Invalid block type!");
       return;
     }
@@ -87,10 +81,8 @@ const MakePost: NextPage<{ id: string }> = ({ id }) => {
     switch (type) {
       case "text":
         return <TextBlock block={block} handleChange={updateBlockContent} />;
-      case "image":
-        return <ImageBlock block={block} handleChange={updateBlockContent} />;
-      case "video":
-        return <VideoBlock block={block} handleChange={updateBlockContent} />;
+      case "file":
+        return <FileBlock block={block} handleChange={updateBlockContent} />;
       case "code":
         return <CodeBlock block={block} handleChange={updateBlockContent} />;
 
@@ -137,7 +129,7 @@ const MakePost: NextPage<{ id: string }> = ({ id }) => {
           </SignOutButton>
         </div>
         <Divider space={30} />
-        <ImageUploader id={uuidv4()} handleUpload={setImage} />
+        <FileUploader id={uuidv4()} handleUpload={setImage} />
         <input
           type="text"
           className="w-full break-words bg-page-background text-5xl font-bold text-default-text focus:outline-none"
@@ -179,16 +171,9 @@ const MakePost: NextPage<{ id: string }> = ({ id }) => {
             />
             <AddButton
               icon="/Add Image Button.svg"
-              text="Add Image"
+              text="Add File"
               handleClick={() => {
-                addBlock("image");
-              }}
-            />
-            <AddButton
-              icon="/Add Video Button.svg"
-              text="Add Video"
-              handleClick={() => {
-                addBlock("video");
+                addBlock("file");
               }}
             />
             <AddButton
@@ -260,24 +245,13 @@ function TextBlock(props: {
   );
 }
 
-function ImageBlock(props: {
+function FileBlock(props: {
   block: Block;
   handleChange: (newContent: string, blockId: string) => void;
 }) {
   return (
     <div>
-      <ImageUploader id={props.block.id} handleUpload={props.handleChange} />
-    </div>
-  );
-}
-
-function VideoBlock(props: {
-  block: Block;
-  handleChange: (newContent: string, blockId: string) => void;
-}) {
-  return (
-    <div>
-      <VideoUploader id={props.block.id} handleUpload={props.handleChange} />
+      <FileUploader id={props.block.id} handleUpload={props.handleChange} />
     </div>
   );
 }
