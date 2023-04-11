@@ -57,7 +57,12 @@ const MakePost: NextPage<{ id: string }> = ({ id }) => {
   });
 
   function addBlock(type: string) {
-    if (type !== "text" && type !== "file" && type !== "code") {
+    if (
+      type !== "text" &&
+      type !== "image" &&
+      type !== "video" &&
+      type !== "code"
+    ) {
       toast.error("Invalid block type!");
       return;
     }
@@ -81,8 +86,10 @@ const MakePost: NextPage<{ id: string }> = ({ id }) => {
     switch (type) {
       case "text":
         return <TextBlock block={block} handleChange={updateBlockContent} />;
-      case "file":
-        return <FileBlock block={block} handleChange={updateBlockContent} />;
+      case "image":
+        return <ImageBlock block={block} handleChange={updateBlockContent} />;
+      case "video":
+        return <VideoBlock block={block} handleChange={updateBlockContent} />;
       case "code":
         return <CodeBlock block={block} handleChange={updateBlockContent} />;
 
@@ -129,7 +136,8 @@ const MakePost: NextPage<{ id: string }> = ({ id }) => {
           </SignOutButton>
         </div>
         <Divider space={30} />
-        <FileUploader onUpload={setImage} />
+        <p className="font-thin text-default-text">Cover Picture</p>
+        <FileUploader onUpload={setImage} requiredType="image" />
         <input
           type="text"
           className="w-full break-words bg-page-background text-5xl font-bold text-default-text focus:outline-none"
@@ -171,9 +179,16 @@ const MakePost: NextPage<{ id: string }> = ({ id }) => {
             />
             <AddButton
               icon="/Add Image Button.svg"
-              text="Add File"
+              text="Add Image / Gif"
               handleClick={() => {
-                addBlock("file");
+                addBlock("image");
+              }}
+            />
+            <AddButton
+              icon="/Add Video Button.svg"
+              text="Add Video"
+              handleClick={() => {
+                addBlock("video");
               }}
             />
             <AddButton
@@ -245,7 +260,7 @@ function TextBlock(props: {
   );
 }
 
-function FileBlock(props: {
+function ImageBlock(props: {
   block: Block;
   handleChange: (newContent: string, blockId: string) => void;
 }) {
@@ -255,7 +270,24 @@ function FileBlock(props: {
 
   return (
     <div>
-      <FileUploader onUpload={onUpload} />
+      <p className="font-thin text-default-text">Image Uploader</p>
+      <FileUploader onUpload={onUpload} requiredType="image" />
+    </div>
+  );
+}
+
+function VideoBlock(props: {
+  block: Block;
+  handleChange: (newContent: string, blockId: string) => void;
+}) {
+  const onUpload = (url: string) => {
+    props.handleChange(url, props.block.id);
+  };
+
+  return (
+    <div>
+      <p className="font-thin text-default-text">Video Uploader</p>
+      <FileUploader onUpload={onUpload} requiredType="video" />
     </div>
   );
 }

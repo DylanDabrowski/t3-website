@@ -1,7 +1,7 @@
-import { useCallback, useMemo, useState } from "react";
+import { useState } from "react";
 import { useDropzone } from "react-dropzone";
 import axios from "axios";
-
+import { toast } from "react-hot-toast";
 import { api } from "../utils/api";
 import Image from "next/image";
 import { Spinner } from "./spinner";
@@ -17,6 +17,7 @@ function removeQueryString(input: string): string {
 
 export const FileUploader = (props: {
   onUpload: (imageUri: string) => void;
+  requiredType?: string;
 }) => {
   const { mutateAsync: fetchPresignedUrls } =
     api.s3.getStandardUploadPresignedUrl.useMutation();
@@ -36,6 +37,12 @@ export const FileUploader = (props: {
         setUploading(true);
         const file = files[0] as File;
         acceptedFiles[0] = file;
+
+        if (props.requiredType && !file.type.includes(props.requiredType)) {
+          toast.error(`File must be of type ${props.requiredType}`);
+          setUploading(false);
+          return;
+        }
 
         fetchPresignedUrls({
           key: file.name,
