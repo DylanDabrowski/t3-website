@@ -16,8 +16,7 @@ function removeQueryString(input: string): string {
 }
 
 export const FileUploader = (props: {
-  id: string;
-  handleUpload: (imageUri: string, id: string) => void;
+  onUpload: (imageUri: string) => void;
 }) => {
   const { mutateAsync: fetchPresignedUrls } =
     api.s3.getStandardUploadPresignedUrl.useMutation();
@@ -62,6 +61,7 @@ export const FileUploader = (props: {
           setFileName(acceptedFiles[0].name);
         }
         setFileUrl(removeQueryString(url));
+        props.onUpload(removeQueryString(url));
       })
       .catch((err) => console.error(err));
     await apiUtils.s3.getObjects.invalidate();

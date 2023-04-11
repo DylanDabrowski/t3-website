@@ -129,7 +129,7 @@ const MakePost: NextPage<{ id: string }> = ({ id }) => {
           </SignOutButton>
         </div>
         <Divider space={30} />
-        <FileUploader id={uuidv4()} handleUpload={setImage} />
+        <FileUploader onUpload={setImage} />
         <input
           type="text"
           className="w-full break-words bg-page-background text-5xl font-bold text-default-text focus:outline-none"
@@ -249,9 +249,13 @@ function FileBlock(props: {
   block: Block;
   handleChange: (newContent: string, blockId: string) => void;
 }) {
+  const onUpload = (url: string) => {
+    props.handleChange(url, props.block.id);
+  };
+
   return (
     <div>
-      <FileUploader id={props.block.id} handleUpload={props.handleChange} />
+      <FileUploader onUpload={onUpload} />
     </div>
   );
 }
@@ -266,6 +270,11 @@ function CodeBlock(props: {
   handleChange: (newContent: string, blockId: string) => void;
 }) {
   const [code, setCode] = useState(`console.log("Hello World!")`);
+
+  useEffect(() => {
+    props.handleChange(code, props.block.id);
+  }, []);
+
   return (
     <div>
       <CodeEditor

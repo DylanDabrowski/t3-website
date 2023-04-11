@@ -34,7 +34,7 @@ type CreateContextOptions = Record<string, never>;
 const createInnerTRPCContext = (_opts: CreateContextOptions) => {
   return {
     prisma,
-    s3
+    s3,
   };
 };
 
