@@ -18,12 +18,12 @@ function removeQueryString(input: string): string {
 export const FileUploader = (props: {
   onUpload: (imageUri: string) => void;
   requiredType?: string;
+  value: string;
 }) => {
   const { mutateAsync: fetchPresignedUrls } =
     api.s3.getStandardUploadPresignedUrl.useMutation();
   const apiUtils = api.useContext();
 
-  const [fileUrl, setFileUrl] = useState<string>("");
   const [fileType, setFileType] = useState<string>("");
   const [fileName, setFileName] = useState<string>("");
   const [uploading, setUploading] = useState<boolean>(false);
@@ -67,7 +67,6 @@ export const FileUploader = (props: {
           setFileType(acceptedFiles[0].type);
           setFileName(acceptedFiles[0].name);
         }
-        setFileUrl(removeQueryString(url));
         props.onUpload(removeQueryString(url));
       })
       .catch((err) => console.error(err));
@@ -86,18 +85,18 @@ export const FileUploader = (props: {
         <input {...getInputProps()} />
         {uploading ? (
           <Spinner />
-        ) : fileUrl ? (
+        ) : props.value ? (
           fileType?.includes("image") ? (
             <Image
               className="h-auto w-auto max-w-full"
-              src={fileUrl}
+              src={props.value}
               alt="uploaded image"
               width={1440}
               height={1440}
             />
           ) : fileType?.includes("video") ? (
             <video
-              src={fileUrl}
+              src={props.value}
               className="h-auto w-auto max-w-full"
               controls
             ></video>

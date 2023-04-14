@@ -67,22 +67,22 @@ function SpinningSun() {
 function Waves() {
   return (
     <div className="h-full">
-      <div className="absolute left-44 top-10">
+      <div className="absolute left-52 top-10">
         <ShakingImage />
       </div>
-      <div className="absolute left-96 top-20">
+      <div className="absolute left-[400px] top-20">
         <ShakingImage />
       </div>
-      <div className="absolute left-[580px] top-8">
+      <div className="absolute left-[620px] top-8">
         <ShakingImage />
       </div>
-      <div className="absolute left-24 top-40">
+      <div className="absolute left-28 top-44">
         <ShakingImage />
       </div>
-      <div className="absolute left-80 top-52">
+      <div className="absolute left-[340px] top-52">
         <ShakingImage />
       </div>
-      <div className="absolute left-[540px] top-44">
+      <div className="absolute left-[575px] top-44">
         <ShakingImage />
       </div>
       <div className="absolute left-10 top-72">

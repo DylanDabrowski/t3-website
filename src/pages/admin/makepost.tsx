@@ -70,6 +70,14 @@ const MakePost: NextPage<{ id: string }> = ({ id }) => {
     setContent([...content, newObject]);
   }
 
+  function deleteBlock(id: string) {
+    try {
+      setContent((current) => current.filter((block) => block.id !== id));
+    } catch (error) {
+      toast.error(`Could not delete this block: ${error}`);
+    }
+  }
+
   function updateBlockContent(newContent: string, blockId: string) {
     const newBlocks = content.map((block, i) => {
       if (block.id == blockId) {
@@ -85,18 +93,46 @@ const MakePost: NextPage<{ id: string }> = ({ id }) => {
   function getBlock(block: Block, type: string) {
     switch (type) {
       case "text":
-        return <TextBlock block={block} handleChange={updateBlockContent} />;
+        return (
+          <TextBlock
+            block={block}
+            handleChange={updateBlockContent}
+            delete={deleteBlock}
+          />
+        );
       case "image":
-        return <ImageBlock block={block} handleChange={updateBlockContent} />;
+        return (
+          <ImageBlock
+            block={block}
+            handleChange={updateBlockContent}
+            delete={deleteBlock}
+          />
+        );
       case "video":
-        return <VideoBlock block={block} handleChange={updateBlockContent} />;
+        return (
+          <VideoBlock
+            block={block}
+            handleChange={updateBlockContent}
+            delete={deleteBlock}
+          />
+        );
       case "code":
-        return <CodeBlock block={block} handleChange={updateBlockContent} />;
+        return (
+          <CodeBlock
+            block={block}
+            handleChange={updateBlockContent}
+            delete={deleteBlock}
+          />
+        );
 
       default:
         return <ErrorBlock />;
     }
   }
+
+  useEffect(() => {
+    console.log(content);
+  }, [content]);
 
   const { user, isLoaded } = useUser();
 
@@ -137,7 +173,7 @@ const MakePost: NextPage<{ id: string }> = ({ id }) => {
         </div>
         <Divider space={30} />
         <p className="font-thin text-default-text">Cover Picture</p>
-        <FileUploader onUpload={setImage} requiredType="image" />
+        <FileUploader onUpload={setImage} requiredType="image" value={image} />
         <input
           type="text"
           className="w-full break-words bg-page-background text-5xl font-bold text-default-text focus:outline-none"
@@ -245,9 +281,20 @@ function AddButton(props: {
 function TextBlock(props: {
   block: Block;
   handleChange: (newContent: string, blockId: string) => void;
+  delete: (id: string) => void;
 }) {
   return (
     <div>
+      <Image
+        onClick={() => {
+          props.delete(props.block.id);
+        }}
+        className="cursor-pointer"
+        src={"/Delete Button.svg"}
+        alt="delete button"
+        width={20}
+        height={20}
+      />
       <textarea
         className="no-scrollbar my-2 w-full resize-none overflow-y-hidden rounded-xl border-2 bg-page-background p-4 font-extralight text-default-text"
         placeholder="Start typing something ..."
@@ -255,6 +302,7 @@ function TextBlock(props: {
           updateTextareaHeight(e);
           props.handleChange(e.target.value, props.block.id);
         }}
+        value={props.block.content}
       />
     </div>
   );
@@ -263,6 +311,7 @@ function TextBlock(props: {
 function ImageBlock(props: {
   block: Block;
   handleChange: (newContent: string, blockId: string) => void;
+  delete: (id: string) => void;
 }) {
   const onUpload = (url: string) => {
     props.handleChange(url, props.block.id);
@@ -270,8 +319,24 @@ function ImageBlock(props: {
 
   return (
     <div>
-      <p className="font-thin text-default-text">Image Uploader</p>
-      <FileUploader onUpload={onUpload} requiredType="image" />
+      <div className="flex">
+        <Image
+          onClick={() => {
+            props.delete(props.block.id);
+          }}
+          className="cursor-pointer"
+          src={"/Delete Button.svg"}
+          alt="delete button"
+          width={20}
+          height={20}
+        />
+        <p className="ml-6 font-thin text-default-text">Image Uploader</p>
+      </div>
+      <FileUploader
+        onUpload={onUpload}
+        requiredType="image"
+        value={props.block.content}
+      />
     </div>
   );
 }
@@ -279,6 +344,7 @@ function ImageBlock(props: {
 function VideoBlock(props: {
   block: Block;
   handleChange: (newContent: string, blockId: string) => void;
+  delete: (id: string) => void;
 }) {
   const onUpload = (url: string) => {
     props.handleChange(url, props.block.id);
@@ -286,8 +352,24 @@ function VideoBlock(props: {
 
   return (
     <div>
-      <p className="font-thin text-default-text">Video Uploader</p>
-      <FileUploader onUpload={onUpload} requiredType="video" />
+      <div className="flex">
+        <Image
+          onClick={() => {
+            props.delete(props.block.id);
+          }}
+          className="cursor-pointer"
+          src={"/Delete Button.svg"}
+          alt="delete button"
+          width={20}
+          height={20}
+        />
+        <p className="ml-6 font-thin text-default-text">Video Uploader</p>
+      </div>
+      <FileUploader
+        onUpload={onUpload}
+        requiredType="video"
+        value={props.block.content}
+      />
     </div>
   );
 }
@@ -300,21 +382,25 @@ const CodeEditor = dynamic(
 function CodeBlock(props: {
   block: Block;
   handleChange: (newContent: string, blockId: string) => void;
+  delete: (id: string) => void;
 }) {
-  const [code, setCode] = useState(`console.log("Hello World!")`);
-
-  useEffect(() => {
-    props.handleChange(code, props.block.id);
-  }, []);
-
   return (
     <div>
+      <Image
+        onClick={() => {
+          props.delete(props.block.id);
+        }}
+        className="cursor-pointer"
+        src={"/Delete Button.svg"}
+        alt="delete button"
+        width={20}
+        height={20}
+      />
       <CodeEditor
-        value={code}
+        value={props.block.content}
         language="ts"
         placeholder="Please enter TS code."
         onChange={(e) => {
-          setCode(e.target.value);
           props.handleChange(e.target.value, props.block.id);
         }}
         padding={15}
