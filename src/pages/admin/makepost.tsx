@@ -12,7 +12,7 @@ import { v4 as uuidv4 } from "uuid";
 import { FileUploader } from "~/components/fileuploader";
 import "@uiw/react-textarea-code-editor/dist.css";
 import { useUser } from "@clerk/clerk-react";
-import { SignIn, SignInButton, SignOutButton } from "@clerk/nextjs";
+import { SignIn, SignOutButton } from "@clerk/nextjs";
 import { env } from "../../env.mjs";
 
 type Block = {
@@ -74,7 +74,8 @@ const MakePost: NextPage<{ id: string }> = ({ id }) => {
     try {
       setContent((current) => current.filter((block) => block.id !== id));
     } catch (error) {
-      toast.error(`Could not delete this block: ${error}`);
+      console.log(error);
+      toast.error(`Could not delete this block`);
     }
   }
 

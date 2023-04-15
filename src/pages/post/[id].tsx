@@ -4,10 +4,9 @@ import { api } from "~/utils/api";
 import Head from "next/head";
 import { PageLayout } from "~/components/layout";
 import { generateSSGHelper } from "~/server/helpers/ssgHelper";
-import { Post } from "@prisma/client";
+import { Post as PostType } from "@prisma/client";
 import Image from "next/image";
 import Divider from "~/components/divider";
-import BackButton from "../../assets/back-button.svg";
 
 type Block = {
   id: string;
@@ -16,7 +15,7 @@ type Block = {
 };
 
 const Post: NextPage<{ id: string }> = ({ id }) => {
-  const { data } = api.posts.getById.useQuery<Post>({
+  const { data } = api.posts.getById.useQuery<PostType>({
     id,
   });
 
@@ -88,12 +87,14 @@ const Post: NextPage<{ id: string }> = ({ id }) => {
             <></>
           )}
           <Divider space={20} />
-          {data.content ? (
-            data.content.map((block: Block) => (
-              <div key={block.id} className="my-4">
-                {getBlock(block.type, block.content)}
-              </div>
-            ))
+          {data.content && Array.isArray(data.content) ? (
+            data.content
+              .filter((block): block is Block => Boolean(block))
+              .map((block) => (
+                <div key={block.id} className="my-4">
+                  {getBlock(block.type, block.content)}
+                </div>
+              ))
           ) : (
             <p>Loading</p>
           )}
