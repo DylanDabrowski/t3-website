@@ -8,6 +8,8 @@ import AboutMe from "~/components/aboutme";
 import BlogCard from "~/components/blogcard";
 import Hero from "~/components/hero";
 import { PageLayout } from "~/components/layout";
+import SectionHeading from "~/components/sectionheading";
+import Work from "~/components/work";
 import { api } from "~/utils/api";
 
 const Home: NextPage = () => {
@@ -24,6 +26,9 @@ const Home: NextPage = () => {
       <PageLayout>
         <Hero />
         <AboutMe />
+        <SectionHeading text={"Work"} />
+        <Work />
+        <SectionHeading text={"Blog"} />
         {postsLoading ? (
           <p>Loading</p>
         ) : data ? (

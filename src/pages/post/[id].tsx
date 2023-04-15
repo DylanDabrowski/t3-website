@@ -76,13 +76,17 @@ const Post: NextPage<{ id: string }> = ({ id }) => {
           <h2 className="mt-6 font-extralight text-default-text">
             {data.description}
           </h2>
-          <Image
-            className="mt-4 max-h-96 object-contain"
-            src={data.image}
-            alt="cover image"
-            width={1440}
-            height={1440}
-          />
+          {data.image ? (
+            <Image
+              className="mt-4 max-h-96 object-contain"
+              src={data.image}
+              alt="cover image"
+              width={1440}
+              height={1440}
+            />
+          ) : (
+            <></>
+          )}
           <Divider space={20} />
           {data.content ? (
             data.content.map((block: Block) => (
