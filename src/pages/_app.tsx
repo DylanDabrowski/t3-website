@@ -9,7 +9,9 @@ const MyApp: AppType = ({ Component, pageProps }) => {
   return (
     <ClerkProvider {...pageProps}>
       <Toaster position="top-center" />
-      <Component {...pageProps} />
+      <div className="bg-page-background">
+        <Component {...pageProps} />
+      </div>
     </ClerkProvider>
   );
 };

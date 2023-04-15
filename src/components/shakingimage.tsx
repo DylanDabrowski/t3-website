@@ -41,7 +41,13 @@ export default function ShakingImage() {
       variants={variants}
       animate={"start"}
     >
-      <Image className="" src={wave} alt="wave svg" width={100} height={100} />
+      <Image
+        className="w-[75px] md:w-[100px]"
+        src={wave}
+        alt="wave svg"
+        width={100}
+        height={100}
+      />
     </motion.div>
   );
 }

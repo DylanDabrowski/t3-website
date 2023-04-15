@@ -20,7 +20,7 @@ export default function AboutMe() {
   }, []);
 
   return (
-    <div className="relative h-[550px]">
+    <div className="relative h-[450px] md:h-[550px]">
       <div className="absolute h-full w-full ">
         <SpinningSun />
       </div>
@@ -45,15 +45,15 @@ function SpinningSun() {
   return (
     <div className="relative">
       <Image
-        className="absolute left-8 top-8"
+        className="absolute left-[25px] top-[25px] w-[50px] md:left-8 md:top-8 md:w-[60px]"
         // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         src={yellowCircle}
         alt="yellow circle"
-        width={61}
-        height={61}
+        width={100}
+        height={100}
       />
       <Image
-        className="absolute left-0 top-0 animate-spin-slow"
+        className="absolute left-0 top-0 w-[100px] animate-spin-slow md:left-0 md:top-0 md:w-[125px]"
         // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         src={aboutMeText}
         alt="yellow circle"
@@ -66,33 +66,37 @@ function SpinningSun() {
 
 function Waves() {
   return (
-    <div className="h-full">
-      <div className="absolute left-52 top-10">
-        <ShakingImage />
-      </div>
-      <div className="absolute left-[400px] top-20">
-        <ShakingImage />
-      </div>
-      <div className="absolute left-[620px] top-8">
-        <ShakingImage />
-      </div>
-      <div className="absolute left-28 top-44">
-        <ShakingImage />
-      </div>
-      <div className="absolute left-[340px] top-52">
-        <ShakingImage />
-      </div>
-      <div className="absolute left-[575px] top-44">
-        <ShakingImage />
-      </div>
-      <div className="absolute left-10 top-72">
-        <ShakingImage />
-      </div>
-      <div className="absolute left-64 top-[330px]">
-        <ShakingImage />
-      </div>
-      <div className="absolute left-[500px] top-[320px]">
-        <ShakingImage />
+    <div className="flex h-full w-full justify-center">
+      <div className="absolute h-full w-[400px] md:block md:w-full">
+        <div className="absolute left-[140px] top-[40px] md:left-[200px] md:top-[40px]">
+          <ShakingImage />
+        </div>
+        <div className="absolute left-[60px] top-[150px] md:left-[112px] md:top-[170px]">
+          <ShakingImage />
+        </div>
+        <div className="absolute left-[20px] top-[270px] md:left-[40px] md:top-[300px]">
+          <ShakingImage />
+        </div>
+
+        <div className="absolute left-[280px] top-[60px] md:left-[400px] md:top-[80px]">
+          <ShakingImage />
+        </div>
+        <div className="absolute left-[230px] top-[180px] md:left-[340px] md:top-[200px]">
+          <ShakingImage />
+        </div>
+        <div className="absolute left-[200px] top-[300px] md:left-[260px] md:top-[330px]">
+          <ShakingImage />
+        </div>
+
+        <div className="absolute hidden md:left-[620px] md:top-[32px] md:block">
+          <ShakingImage />
+        </div>
+        <div className="absolute hidden md:left-[575px] md:top-[175px] md:block">
+          <ShakingImage />
+        </div>
+        <div className="absolute hidden md:left-[500px] md:top-[320px] md:block">
+          <ShakingImage />
+        </div>
       </div>
     </div>
   );
@@ -119,7 +123,7 @@ function Card1() {
         />
       </div>
       <div className="col-start-3 col-end-7 row-span-2 mt-4">
-        <p className="text-2xl text-zinc-400">
+        <p className="text-sm text-zinc-400 md:text-2xl">
           Born in 2000 to a Portuguese mother and Polish immigrant father, I am
           currently in my senior year of studying Computer Science. I work
           diligently on the skills I have, and I am always looking to learn
@@ -127,7 +131,7 @@ function Card1() {
         </p>
       </div>
       <div className="col-span-6">
-        <p className="text-lg text-zinc-600">
+        <p className="text-md text-zinc-600 md:text-lg">
           The best way to contact me is through my email, but I love connecting
           on linkedin or other social medias! 📫
         </p>
@@ -148,57 +152,61 @@ function Card2() {
         <h1 className="text-3xl font-bold text-default-text">Tech Stack</h1>
       </div>
       <div className="col-span-4 flex items-end">
-        <p className="mx-8 text-xl text-zinc-400">
+        <p className="mt-4 text-sm text-zinc-400 md:mx-8 md:text-xl">
           Strong foundation in Full-Stack development. I started with Javascript
           then eventually became a fully immersed Typescript developer. I also
           use Tailwind on almost all of my own projects.
         </p>
       </div>
-      <div className="col-span-4 row-start-3 flex items-center justify-center gap-8">
+      <div className="col-span-4 row-start-3 flex items-center justify-center gap-2 md:gap-8">
         <div className="flex items-center">
           <Image
-            className="mr-4 h-10 w-10"
+            className="mr-1 h-8 w-8 md:mr-4 md:h-10 md:w-10"
             src={htmlLogo}
             alt="html img"
             width={100}
             height={100}
           />
-          <p className="text-xl font-bold text-default-text">HTML</p>
+          <p className="text-xs font-bold text-default-text md:text-xl">HTML</p>
         </div>
         <div className="flex items-center">
           <Image
-            className="mr-4 h-10 w-10"
+            className="mr-1 h-8 w-8 md:mr-4 md:h-10 md:w-10"
             src={cssLogo}
             alt="css img"
             width={100}
             height={100}
           />
-          <p className="text-xl font-bold text-default-text">CSS</p>
+          <p className="text-xs font-bold text-default-text md:text-xl">CSS</p>
         </div>
         <div className="flex items-center">
           <Image
-            className="mr-4 h-10 w-10"
+            className="mr-4 h-8 w-8 md:mr-1 md:h-10 md:w-10"
             src={tsLogo}
             alt="typescript img"
             width={100}
             height={100}
           />
-          <p className="text-xl font-bold text-default-text">Typescript</p>
+          <p className="text-xs font-bold text-default-text md:text-xl">
+            Typescript
+          </p>
         </div>
         <div className="flex items-center">
           <Image
-            className="mr-4 h-10 w-10"
+            className="mr-4 h-8 w-8 md:mr-1 md:h-10 md:w-10"
             src={tailwindLogo}
             alt="tailwind img"
             width={100}
             height={100}
           />
-          <p className="text-xl font-bold text-default-text">Tailwind</p>
+          <p className="text-xs font-bold text-default-text md:text-xl">
+            Tailwind
+          </p>
         </div>
       </div>
       <div className="col-span-4 row-start-4">
         <Image
-          className="h-28 rounded-2xl object-cover"
+          className="h-16 rounded-2xl object-cover md:h-28"
           src={code}
           alt="stock image"
           width={1000}

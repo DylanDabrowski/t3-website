@@ -41,7 +41,7 @@ export default function Hero() {
             width={24}
             height={24}
           />
-          <p className="text-md mr-6 font-bold tracking-wide text-default-text">
+          <p className="mr-6 text-sm font-bold tracking-wide text-default-text">
             LinkedIn
           </p>
         </a>
@@ -58,7 +58,7 @@ export default function Hero() {
             width={24}
             height={24}
           />
-          <p className="text-md mr-6 font-bold tracking-wide text-default-text">
+          <p className="mr-6 text-sm font-bold tracking-wide text-default-text">
             Instagram
           </p>
         </a>
@@ -75,7 +75,7 @@ export default function Hero() {
             width={24}
             height={24}
           />
-          <p className="text-md mr-6 font-bold tracking-wide text-default-text">
+          <p className="mr-6 text-sm font-bold tracking-wide text-default-text">
             Github
           </p>
         </a>
@@ -92,7 +92,7 @@ export default function Hero() {
             width={24}
             height={24}
           />
-          <p className="text-md mr-6 font-bold tracking-wide text-default-text">
+          <p className="mr-6 text-sm font-bold tracking-wide text-default-text">
             Mail
           </p>
         </a>
