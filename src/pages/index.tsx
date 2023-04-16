@@ -21,7 +21,7 @@ const Home: NextPage = () => {
       <Head>
         <title>Dylan Dabrowski</title>
         <meta name="description" content="Personal web portfolio" />
-        <link rel="icon" href="/favicon.ico" />
+        <link rel="icon" href="/favicon.png" />
       </Head>
       <PageLayout>
         <Hero />

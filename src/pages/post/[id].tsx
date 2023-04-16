@@ -125,7 +125,9 @@ export const getStaticPaths = () => {
 function TextBlock(props: { content: string }) {
   return (
     <div>
-      <p className="text-xl text-default-text">{props.content}</p>
+      <p className="whitespace-pre-line text-xl text-default-text">
+        {props.content}
+      </p>
     </div>
   );
 }
