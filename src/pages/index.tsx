@@ -9,6 +9,7 @@ import BlogCard from "~/components/blogcard";
 import Hero from "~/components/hero";
 import { PageLayout } from "~/components/layout";
 import SectionHeading from "~/components/sectionheading";
+import { Spinner } from "~/components/spinner";
 import Work from "~/components/work";
 import { api } from "~/utils/api";
 
@@ -30,7 +31,12 @@ const Home: NextPage = () => {
         <Work />
         <SectionHeading text={"Blog"} />
         {postsLoading ? (
-          <p>Loading</p>
+          <div className="mt-8 flex w-full flex-col items-center justify-center">
+            <Spinner size={14} />
+            <p className="mt-2 animate-pulse font-bold text-gray-600">
+              Loading Posts ...
+            </p>
+          </div>
         ) : data ? (
           data.map((post) => (
             <Link href={`/post/${post.id}`} key={post.id}>
