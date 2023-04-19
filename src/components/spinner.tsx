@@ -7,7 +7,7 @@ export const Spinner = (props: { size?: number }) => {
         aria-hidden="true"
         className={`mr-2 ${
           props.size ? `h-${props.size} w-${props.size}` : "h-8 w-8"
-        } animate-spin fill-gray-800 text-gray-200 dark:text-gray-600`}
+        } animate-spin fill-gray-200 text-gray-800 dark:text-gray-600`}
         viewBox="0 0 100 101"
         fill="none"
         xmlns="http://www.w3.org/2000/svg"
