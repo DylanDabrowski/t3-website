@@ -59,7 +59,9 @@ const Home: NextPage = () => {
             </Link>
           ))
         ) : (
-          <p>Failed to load posts</p>
+          <div className="mt-8 flex w-full justify-center">
+            <p className="font-bold text-default-text ">Failed to load posts</p>
+          </div>
         )}
       </PageLayout>
     </>
