@@ -11,13 +11,18 @@ const content = cards.flatMap((card) => [
 
 export default function AboutMe() {
   const [activeIndex, setActiveIndex] = useState(0);
+  const [isWaves, setIsWaves] = useState(false);
 
   useEffect(() => {
-    const intervalId = setInterval(() => {
-      setActiveIndex((prevIndex) => (prevIndex + 1) % content.length);
-    }, 5000); // Increase the interval time to account for the additional animation duration
+    const intervalId = setInterval(
+      () => {
+        setActiveIndex((prevIndex) => (prevIndex + 1) % content.length);
+        setIsWaves(!isWaves);
+      },
+      isWaves ? 2000 : 15000
+    ); // Increase the interval time to account for the additional animation duration
     return () => clearInterval(intervalId);
-  }, []);
+  }, [isWaves]);
 
   return (
     <div className="relative h-[450px] md:h-[550px]">
