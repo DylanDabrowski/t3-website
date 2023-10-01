@@ -24,8 +24,7 @@ export default function Hero() {
         </div>
       </div>
       <p className="mt-8 text-xl font-thin text-default-text">
-        Hi my name is Dylan, welcome to my website! Here you can learn about me,
-        my work, and some of my latest projects.
+        Hi my name is Dylan, welcome to my website!
       </p>
       <div className="mt-4 flex items-center">
         <a

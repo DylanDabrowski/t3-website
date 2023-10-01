@@ -115,7 +115,7 @@ function Card1() {
       <div className="col-start-3 col-end-7 flex flex-col justify-end">
         <h1 className="text-xl font-bold text-blue-300">ABOUT ME</h1>
         <p className="text-lg font-thin text-default-text">
-          Full Stack Developer, based in Toronto, ON 📍
+          Full Stack Dev, based in Toronto, ON 📍
         </p>
       </div>
       <div className="col-span-2 row-start-2 row-end-4 p-4">
@@ -158,9 +158,10 @@ function Card2() {
       </div>
       <div className="col-span-4 flex items-end">
         <p className="mt-4 text-sm text-zinc-400 md:mx-8 md:text-xl">
-          Strong foundation in Full-Stack development. I started with Javascript
-          then eventually became a fully immersed Typescript developer. I also
-          use Tailwind on almost all of my own projects.
+          Strong foundation in HTML, CSS, JS/TS, and C# languages. Currently
+          working in dotnet web for my current full-time work, though I have
+          many ther skills in machine learning and AI that I continue to work
+          on.
         </p>
       </div>
       <div className="col-span-4 row-start-3 flex items-center justify-center gap-2 md:gap-8">

@@ -8,7 +8,7 @@ export default function Work() {
         title={"Porter Airlines"}
         date={"May 2023 - Present"}
         description={
-          "Starting my position as a Web Developer for Porter Airlines on May 10th 2023!"
+          "Started work at Porter Airlines in May of 2023 as a full-time Web Developer, currently working on flyporter.com and have already completed many HTML/CSS components while also contributing to the C# and JS logic."
         }
         color1={"text-sky-200"}
         color2={"text-cyan-200"}
