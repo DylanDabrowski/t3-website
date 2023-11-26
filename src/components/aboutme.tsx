@@ -25,7 +25,7 @@ export default function AboutMe() {
   }, [isWaves]);
 
   return (
-    <div className="relative h-[450px] md:h-[550px]">
+    <div className="relative h-[450px] md:h-[500px]">
       <div className="absolute h-full w-full ">
         <SpinningSun />
       </div>
@@ -107,35 +107,25 @@ function Waves() {
   );
 }
 
-import pfp from "../assets/pfp.jpeg";
 function Card1() {
   return (
-    <div className="grid grid-cols-6 grid-rows-4 gap-1">
+    <div className="pt-[70px]">
       {/* <p className="h-40 bg-green-200">1</p> */}
-      <div className="col-start-3 col-end-7 flex flex-col justify-end">
+      <div className="ml-[150px]">
         <h1 className="text-xl font-bold text-blue-300">ABOUT ME</h1>
         <p className="text-lg font-thin text-default-text">
           Full Stack Dev, based in Toronto, ON 📍
         </p>
       </div>
-      <div className="col-span-2 row-start-2 row-end-4 p-4">
-        <Image
-          className="rounded-2xl"
-          src={pfp}
-          alt="profile picture"
-          width={400}
-          height={400}
-        />
-      </div>
-      <div className="col-start-3 col-end-7 row-span-2 mt-4">
+      <div className="mt-8">
         <p className="text-sm text-zinc-400 md:text-2xl">
-          Born in 2000 to a Portuguese mother and Polish immigrant father, I am
-          currently in my senior year of studying Computer Science. I work
-          diligently on the skills I have, and I am always looking to learn
-          more. Hopefully we can meet at a hackathon sometime soon! 🤝
+          I am currently in my senior year of studying Computer Science. I have
+          a strong foundation in front-end scripting and styling languages, and
+          I am always eager to learn more. Hopefully, we can meet at a hackathon
+          sometime soon! 🤝
         </p>
       </div>
-      <div className="col-span-6">
+      <div className="mt-8">
         <p className="text-md text-zinc-600 md:text-lg">
           The best way to contact me is through my email, but I love connecting
           on linkedin or other social medias! 📫
@@ -152,65 +142,19 @@ import tailwindLogo from "../assets/tailwind-logo.png";
 import code from "../assets/code.jpeg";
 function Card2() {
   return (
-    <div className="grid grid-cols-4 grid-rows-4 gap-1">
-      <div className="col-span-4 flex items-end justify-center">
+    <div className="pt-[90px]">
+      <div className="ml-[150px]">
         <h1 className="text-3xl font-bold text-default-text">Tech Stack</h1>
       </div>
-      <div className="col-span-4 flex items-end">
+      <div className="mt-10">
         <p className="mt-4 text-sm text-zinc-400 md:mx-8 md:text-xl">
-          Strong foundation in HTML, CSS, JS/TS, and C# languages. Currently
-          working in dotnet web for my current full-time work, though I have
-          many ther skills in machine learning and AI that I continue to work
-          on.
+          I have a strong foundation in HTML, CSS, JS/TS, and C# languages.
+          Currently, I am working with .NET for web development in my full-time
+          job. Additionally, I possess many other skills in machine learning and
+          AI, which I continue to develop.
         </p>
       </div>
-      <div className="col-span-4 row-start-3 flex items-center justify-center gap-2 md:gap-8">
-        <div className="flex items-center">
-          <Image
-            className="mr-1 h-8 w-8 md:mr-4 md:h-10 md:w-10"
-            src={htmlLogo}
-            alt="html img"
-            width={100}
-            height={100}
-          />
-          <p className="text-xs font-bold text-default-text md:text-xl">HTML</p>
-        </div>
-        <div className="flex items-center">
-          <Image
-            className="mr-1 h-8 w-8 md:mr-4 md:h-10 md:w-10"
-            src={cssLogo}
-            alt="css img"
-            width={100}
-            height={100}
-          />
-          <p className="text-xs font-bold text-default-text md:text-xl">CSS</p>
-        </div>
-        <div className="flex items-center">
-          <Image
-            className="mr-4 h-8 w-8 md:mr-1 md:h-10 md:w-10"
-            src={tsLogo}
-            alt="typescript img"
-            width={100}
-            height={100}
-          />
-          <p className="text-xs font-bold text-default-text md:text-xl">
-            Typescript
-          </p>
-        </div>
-        <div className="flex items-center">
-          <Image
-            className="mr-4 h-8 w-8 md:mr-1 md:h-10 md:w-10"
-            src={tailwindLogo}
-            alt="tailwind img"
-            width={100}
-            height={100}
-          />
-          <p className="text-xs font-bold text-default-text md:text-xl">
-            Tailwind
-          </p>
-        </div>
-      </div>
-      <div className="col-span-4 row-start-4">
+      <div className="mt-10">
         <Image
           className="h-16 rounded-2xl object-cover md:h-28"
           src={code}
