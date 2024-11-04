@@ -1,9 +1,6 @@
-import { SignIn, SignOutButton } from "@clerk/nextjs";
 import { type NextPage } from "next";
 import Head from "next/head";
-import Image from "next/image";
 import Link from "next/link";
-import { toast } from "react-hot-toast";
 import AboutMe from "~/components/aboutme";
 import BlogCard from "~/components/blogcard";
 import Hero from "~/components/hero";
@@ -14,7 +11,6 @@ import Work from "~/components/work";
 import { api } from "~/utils/api";
 
 const Home: NextPage = () => {
-  const ctx = api.useContext();
   const { data, isLoading: postsLoading } = api.posts.getAll.useQuery();
 
   return (

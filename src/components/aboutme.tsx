@@ -117,18 +117,16 @@ function Card1() {
           Full Stack Dev, based in Toronto, ON 📍
         </p>
       </div>
-      <div className="mt-8">
+      <div className="mt-16">
         <p className="text-sm text-zinc-400 md:text-2xl">
-          I am currently in my senior year of studying Computer Science. I have
-          a strong foundation in front-end scripting and styling languages, and
-          I am always eager to learn more. Hopefully, we can meet at a hackathon
-          sometime soon! 🤝
+          I am a Web Developer at Porter Airlines, I love meeting new people and
+          hope to make more connections 🤝
         </p>
       </div>
-      <div className="mt-8">
+      <div className="mt-16">
         <p className="text-md text-zinc-600 md:text-lg">
           The best way to contact me is through my email, but I love connecting
-          on linkedin or other social medias! 📫
+          on linkedin, instagram or other social medias! 📫
         </p>
       </div>
     </div>
