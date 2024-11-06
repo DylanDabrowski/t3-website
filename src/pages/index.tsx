@@ -11,7 +11,7 @@ import Work from "~/components/work";
 import { api } from "~/utils/api";
 
 const Home: NextPage = () => {
-  const { data, isLoading: postsLoading } = api.posts.getAll.useQuery();
+  // const { data, isLoading: postsLoading } = api.posts.getAll.useQuery();
 
   return (
     <>
@@ -26,7 +26,11 @@ const Home: NextPage = () => {
         <SectionHeading text={"Work"} />
         <Work />
         <SectionHeading text={"Blog"} />
-        {postsLoading ? (
+        <p className="md:text-md text-xs font-bold text-zinc-400">
+          Blog posts are currently disabled. Please check back later for more
+          content.
+        </p>
+        {/* {postsLoading ? (
           <div className="mt-8 flex w-full flex-col items-center justify-center">
             <Spinner size={14} />
             <p className="mt-2 animate-pulse font-bold text-gray-600">
@@ -58,7 +62,7 @@ const Home: NextPage = () => {
           <div className="mt-8 flex w-full justify-center">
             <p className="font-bold text-default-text ">Failed to load posts</p>
           </div>
-        )}
+        )} */}
       </PageLayout>
     </>
   );

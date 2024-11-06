@@ -1,5 +1,4 @@
 import React from "react";
-import SectionHeading from "./sectionheading";
 
 export default function Work() {
   return (
@@ -8,31 +7,24 @@ export default function Work() {
         title={"Porter Airlines"}
         date={"May 2023 - Present"}
         description={
-          "Started work at Porter Airlines in May of 2023 as a full-time Web Developer, currently working on flyporter.com and have already completed many HTML/CSS components while also contributing to the C# and JS logic."
+          "Started work at Porter Airlines in May of 2023 as a full-time Web Developer, currently working on flyporter.com"
         }
-        color1={"text-sky-200"}
-        color2={"text-cyan-200"}
-        color3={"text-blue-300"}
+        gradientClass="bg-gradient-to-r from-sky-200 via-cyan-200 to-blue-300"
       />
       <Job2
         title={"Cloud DX"}
         date={"May 2022 - Apr 2023"}
         description={
-          "Web Develepment lead for Cloud DX vital measurements device. Had the pleasure of working on modern web graphing features for hospitals around the world."
+          "Web Development lead for Cloud DX vital measurements device."
         }
-        color1={"text-yellow-200"}
-        color2={"text-orange-200"}
-        color3={"text-red-200"}
+        gradientClass="bg-gradient-to-r from-yellow-200 via-orange-200 to-red-200"
       />
+
       <Job1
         title={"Code Ninjas"}
         date={"May 2020 - Dec 2020"}
-        description={
-          "Taught kids how to code in a fun and engaging way. To this day one of my favorite jobs, soley because of the impact I felt I was able to have teaching with the students."
-        }
-        color1={"text-lime-200"}
-        color2={"text-purple-200"}
-        color3={"text-blue-200"}
+        description={"Taught kids how to code in a fun and engaging way."}
+        gradientClass="bg-gradient-to-r from-lime-200 via-purple-200 to-blue-200"
       />
     </div>
   );
@@ -42,28 +34,16 @@ function Job1(props: {
   title: string;
   date: string;
   description: string;
-  color1: string;
-  color2: string;
-  color3: string;
+  gradientClass: string;
 }) {
   return (
     <div className="my-8 flex w-full">
       <div className="mr-4">
-        <h1
-          className={`whitespace-nowrap text-3xl font-bold ${props.color1} text- md:text-5xl`}
+        <h2
+          className={`whitespace-nowrap ${props.gradientClass} min-h-[55px] bg-clip-text text-3xl font-extrabold leading-5 text-transparent md:text-5xl`}
         >
           {props.title}
-        </h1>
-        <h1
-          className={`-mt-7 whitespace-nowrap text-3xl font-bold ${props.color2} md:text-5xl`}
-        >
-          {props.title}
-        </h1>
-        <h1
-          className={`-mt-7 whitespace-nowrap text-3xl font-bold ${props.color3} md:text-5xl`}
-        >
-          {props.title}
-        </h1>
+        </h2>
       </div>
       <div>
         <p className="text-xs text-zinc-700">{props.date}</p>
@@ -79,34 +59,22 @@ function Job2(props: {
   title: string;
   date: string;
   description: string;
-  color1: string;
-  color2: string;
-  color3: string;
+  gradientClass: string;
 }) {
   return (
     <div className="my-8 flex w-full justify-between">
-      <div className="">
+      <div>
         <p className="text-xs text-zinc-700">{props.date}</p>
         <p className="md:text-md text-xs font-bold text-zinc-400">
           {props.description}
         </p>
       </div>
       <div className="ml-4 text-end">
-        <h1
-          className={`whitespace-nowrap text-3xl font-bold ${props.color1} md:text-5xl`}
+        <h2
+          className={`whitespace-nowrap ${props.gradientClass} bg-clip-text text-3xl font-extrabold text-transparent md:text-5xl md:text-5xl`}
         >
           {props.title}
-        </h1>
-        <h1
-          className={`-mt-7 whitespace-nowrap text-3xl font-bold ${props.color2} md:text-5xl`}
-        >
-          {props.title}
-        </h1>
-        <h1
-          className={`-mt-7 whitespace-nowrap text-3xl font-bold ${props.color3} md:text-5xl`}
-        >
-          {props.title}
-        </h1>
+        </h2>
       </div>
     </div>
   );

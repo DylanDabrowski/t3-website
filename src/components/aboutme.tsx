@@ -112,7 +112,7 @@ function Card1() {
     <div className="pt-[70px]">
       {/* <p className="h-40 bg-green-200">1</p> */}
       <div className="ml-[150px]">
-        <h1 className="text-xl font-bold text-blue-300">ABOUT ME</h1>
+        <h2 className="text-xl font-bold text-blue-300">ABOUT ME</h2>
         <p className="text-lg font-thin text-default-text">
           Full Stack Dev, based in Toronto, ON 📍
         </p>
@@ -123,7 +123,7 @@ function Card1() {
           hope to make more connections 🤝
         </p>
       </div>
-      <div className="mt-16">
+      <div className="mt-28">
         <p className="text-md text-zinc-600 md:text-lg">
           The best way to contact me is through my email, but I love connecting
           on linkedin, instagram or other social medias! 📫
@@ -133,23 +133,20 @@ function Card1() {
   );
 }
 
-import htmlLogo from "../assets/html-logo.png";
-import cssLogo from "../assets/css-logo.png";
-import tsLogo from "../assets/ts-logo.png";
-import tailwindLogo from "../assets/tailwind-logo.png";
 import code from "../assets/code.jpeg";
 function Card2() {
   return (
     <div className="pt-[90px]">
       <div className="ml-[150px]">
-        <h1 className="text-3xl font-bold text-default-text">Tech Stack</h1>
+        <h2 className="text-3xl font-bold text-default-text">Tech Stack</h2>
       </div>
       <div className="mt-10">
         <p className="mt-4 text-sm text-zinc-400 md:mx-8 md:text-xl">
-          I have a strong foundation in HTML, CSS, JS/TS, and C# languages.
-          Currently, I am working with .NET for web development in my full-time
-          job. Additionally, I possess many other skills in machine learning and
-          AI, which I continue to develop.
+          I have a strong foundation in HTML, CSS, JavaScript/TypeScript, and
+          C#. Currently, I am primarily developing in .NET and occasionally
+          using Next.js for work. Additionally, I have experience with a broader
+          tech stack in other languages and frameworks. Please feel free to
+          reach out about my credentials if you would like to learn more!
         </p>
       </div>
       <div className="mt-10">

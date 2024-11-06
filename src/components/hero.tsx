@@ -12,14 +12,15 @@ export default function Hero() {
     <div className="mb-10">
       <div className="flex items-center">
         <Image
-          className="mr-10 rounded-full bg-gradient-to-br from-green-100 to-blue-200 p-1"
+          className="mr-10 max-h-[80px] max-w-[80px] rounded-full bg-gradient-to-br from-green-100 to-blue-200 object-cover p-1"
           src={pfp}
           alt={"profile picture"}
           width={80}
           height={80}
         />
+
         <div>
-          <p className="text-3xl font-bold text-default-text">Dylan</p>
+          <h1 className="text-3xl font-bold text-default-text">Dylan</h1>
           <p className="font-extralight text-default-text">Software Engineer</p>
         </div>
       </div>
