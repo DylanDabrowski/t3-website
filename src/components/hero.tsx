@@ -3,7 +3,7 @@ import type { StaticImageData } from "next/image";
 import { motion } from "framer-motion";
 import { Github, Instagram, Linkedin, Mail, Sparkles } from "lucide-react";
 
-import pfp2 from "../assets/pfp2.JPG";
+import pfp2 from "../assets/pfp2.jpg";
 
 type SocialLink = {
   label: string;
