@@ -1,163 +1,158 @@
-import React, { useState, useEffect } from "react";
-import Image from "next/image";
-import ShakingImage from "./shakingimage";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 
-const cards = [<Card1 key={1} />, <Card2 key={2} />]; // Add as many cards as you want
-const content = cards.flatMap((card) => [
-  { content: card },
-  { content: <Waves /> },
-]);
+const timeline = [
+  {
+    title: "Porter Airlines",
+    role: "Building the FlyPorter digital journey",
+    detail:
+      "Full-time web dev pushing performance, accessibility, and reliability.",
+  },
+  {
+    title: "Cloud DX",
+    role: "Vital measurements platform",
+    detail: "Led web experience for remote care tools used by clinicians.",
+  },
+  {
+    title: "Community",
+    role: "Mentor & collaborator",
+    detail:
+      "Teaching, pairing, and sharing across dev communities in Toronto.",
+  },
+];
+
+const focuses = [
+  "TypeScript-first thinking",
+  "Composed UI systems with React/Next.js",
+  ".NET + cloud APIs with real-world uptime",
+  "Fast shipping, slow design",
+];
+
+const stats = [
+  { label: "Years shipping", value: "4+", accent: "from-cyan-400 to-blue-500" },
+  {
+    label: "Products launched",
+    value: "10",
+    accent: "from-emerald-400 to-teal-500",
+  },
+  {
+    label: "Fave stack",
+    value: "Next.js + .NET",
+    accent: "from-violet-400 to-indigo-500",
+  },
+];
 
 export default function AboutMe() {
-  const [activeIndex, setActiveIndex] = useState(0);
-  const [isWaves, setIsWaves] = useState(false);
-
-  useEffect(() => {
-    const intervalId = setInterval(
-      () => {
-        setActiveIndex((prevIndex) => (prevIndex + 1) % content.length);
-        setIsWaves(!isWaves);
-      },
-      isWaves ? 2000 : 15000
-    ); // Increase the interval time to account for the additional animation duration
-    return () => clearInterval(intervalId);
-  }, [isWaves]);
-
   return (
-    <div className="relative h-[450px] md:h-[500px]">
-      <div className="absolute h-full w-full ">
-        <SpinningSun />
-      </div>
-      <AnimatePresence mode="wait">
-        <motion.div
-          key={activeIndex}
-          initial={{ opacity: 0, translateX: -30 }}
-          animate={{ opacity: 1, translateX: 0 }}
-          exit={{ opacity: 0, translateX: 30 }}
-          transition={{ duration: 0.5 }}
-        >
-          {content[activeIndex]?.content}
-        </motion.div>
-      </AnimatePresence>
-    </div>
-  );
-}
-
-import yellowCircle from "../assets/yellow-circle.svg";
-import aboutMeText from "../assets/ABOUT ME.svg";
-function SpinningSun() {
-  return (
-    <div className="relative">
-      <Image
-        className="absolute left-[25px] top-[25px] w-[50px] md:left-8 md:top-8 md:w-[60px]"
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-        src={yellowCircle}
-        alt="yellow circle"
-        width={100}
-        height={100}
-      />
-      <Image
-        className="absolute left-0 top-0 w-[100px] animate-spin-slow md:left-0 md:top-0 md:w-[125px]"
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-        src={aboutMeText}
-        alt="yellow circle"
-        width={125}
-        height={125}
-      />
-    </div>
-  );
-}
-
-function Waves() {
-  return (
-    <div className="flex h-full w-full justify-center">
-      <div className="absolute h-full w-[400px] md:block md:w-full">
-        <div className="absolute left-[140px] top-[40px] md:left-[200px] md:top-[40px]">
-          <ShakingImage />
-        </div>
-        <div className="absolute left-[60px] top-[150px] md:left-[112px] md:top-[170px]">
-          <ShakingImage />
-        </div>
-        <div className="absolute left-[20px] top-[270px] md:left-[40px] md:top-[300px]">
-          <ShakingImage />
+    <section className="relative mb-16 overflow-hidden rounded-3xl border border-white/5 bg-gradient-to-br from-slate-900/70 via-slate-900/50 to-zinc-950 p-6 shadow-2xl backdrop-blur lg:p-10">
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(56,189,248,0.12),transparent_35%),radial-gradient(circle_at_80%_0%,rgba(129,140,248,0.18),transparent_30%),radial-gradient(circle_at_50%_100%,rgba(16,185,129,0.1),transparent_30%)]" />
+      <div className="relative flex flex-col gap-10">
+        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+          <div className="flex items-center gap-3">
+            <div className="h-10 w-10 rounded-2xl bg-white/5 backdrop-blur" />
+            <div>
+              <p className="text-sm uppercase tracking-[0.2em] text-cyan-300">
+                About
+              </p>
+              <h2 className="text-3xl font-semibold text-default-text md:text-4xl">
+                Pragmatic building, calm visuals.
+              </h2>
+            </div>
+          </div>
+          <p className="max-w-md text-sm text-zinc-300 md:text-base">
+            Solving real problems with calm interfaces. I craft resilient web
+            experiences that keep people moving fast without extra noise.
+          </p>
         </div>
 
-        <div className="absolute left-[280px] top-[60px] md:left-[400px] md:top-[80px]">
-          <ShakingImage />
-        </div>
-        <div className="absolute left-[230px] top-[180px] md:left-[340px] md:top-[200px]">
-          <ShakingImage />
-        </div>
-        <div className="absolute left-[200px] top-[300px] md:left-[260px] md:top-[330px]">
-          <ShakingImage />
+        <div className="grid gap-6 md:grid-cols-3">
+          {stats.map((stat) => (
+            <div
+              key={stat.label}
+              className="relative overflow-hidden rounded-2xl border border-white/5 bg-white/5 p-5 shadow-lg"
+            >
+              <div
+                className={`absolute inset-0 bg-gradient-to-br ${stat.accent} opacity-20 blur-lg`}
+              />
+              <div className="relative">
+                <p className="text-sm uppercase tracking-[0.15em] text-zinc-400">
+                  {stat.label}
+                </p>
+                <p className="mt-2 text-3xl font-semibold text-white">
+                  {stat.value}
+                </p>
+              </div>
+            </div>
+          ))}
         </div>
 
-        <div className="absolute hidden md:left-[620px] md:top-[32px] md:block">
-          <ShakingImage />
-        </div>
-        <div className="absolute hidden md:left-[575px] md:top-[175px] md:block">
-          <ShakingImage />
-        </div>
-        <div className="absolute hidden md:left-[500px] md:top-[320px] md:block">
-          <ShakingImage />
-        </div>
-      </div>
-    </div>
-  );
-}
+        <div className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+            viewport={{ once: true, amount: 0.3 }}
+            className="rounded-2xl border border-white/5 bg-white/5 p-6 shadow-lg"
+          >
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs uppercase tracking-[0.2em] text-emerald-300">
+                  Current energy
+                </p>
+                <h3 className="mt-2 text-2xl font-semibold text-default-text">
+                  Ship. Iterate. Polish.
+                </h3>
+              </div>
+              <div className="h-12 w-12 rounded-full bg-gradient-to-br from-emerald-400/30 to-cyan-400/40 blur-sm" />
+            </div>
+            <p className="mt-4 text-sm text-zinc-300 md:text-base">
+              I blend product sense with engineering discipline to deliver
+              performant experiences. From accessible UI to observability in
+              production, I like owning the full loop.
+            </p>
+            <div className="mt-5 flex flex-wrap gap-2">
+              {focuses.map((focus) => (
+                <span
+                  key={focus}
+                  className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs font-semibold text-zinc-200"
+                >
+                  {focus}
+                </span>
+              ))}
+            </div>
+          </motion.div>
 
-function Card1() {
-  return (
-    <div className="pt-[70px]">
-      {/* <p className="h-40 bg-green-200">1</p> */}
-      <div className="ml-[150px]">
-        <h2 className="text-xl font-bold text-blue-300">ABOUT ME</h2>
-        <p className="text-lg font-thin text-default-text">
-          Full Stack Dev, based in Toronto, ON 📍
-        </p>
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.1 }}
+            viewport={{ once: true, amount: 0.3 }}
+            className="rounded-2xl border border-white/5 bg-gradient-to-br from-white/5 via-white/10 to-white/5 p-6 shadow-lg"
+          >
+            <div className="flex items-center gap-3">
+              <div className="h-2 w-2 rounded-full bg-cyan-400 shadow-[0_0_12px_rgba(34,211,238,0.7)]" />
+              <p className="text-sm uppercase tracking-[0.2em] text-zinc-400">
+                Snapshots
+              </p>
+            </div>
+            <div className="mt-4 space-y-4">
+              {timeline.map((item) => (
+                <div
+                  key={item.title}
+                  className="rounded-xl bg-white/5 p-4 transition duration-150 hover:bg-white/10"
+                >
+                  <p className="text-sm font-semibold text-white">
+                    {item.title}
+                  </p>
+                  <p className="text-xs uppercase tracking-[0.14em] text-cyan-200">
+                    {item.role}
+                  </p>
+                  <p className="mt-2 text-sm text-zinc-300">{item.detail}</p>
+                </div>
+              ))}
+            </div>
+          </motion.div>
+        </div>
       </div>
-      <div className="mt-16">
-        <p className="text-sm text-zinc-400 md:text-2xl">
-          I am a Web Developer at Porter Airlines, I love meeting new people and
-          hope to make more connections 🤝
-        </p>
-      </div>
-      <div className="mt-28">
-        <p className="text-md text-zinc-600 md:text-lg">
-          The best way to contact me is through my email, but I love connecting
-          on linkedin, instagram or other social medias! 📫
-        </p>
-      </div>
-    </div>
-  );
-}
-
-import code from "../assets/code.jpeg";
-function Card2() {
-  return (
-    <div className="pt-[90px]">
-      <div className="ml-[150px]">
-        <h2 className="text-3xl font-bold text-default-text">Tech Stack</h2>
-      </div>
-      <div className="mt-10">
-        <p className="mt-4 text-sm text-zinc-400 md:mx-8 md:text-xl">
-          I have a strong foundation in HTML, CSS, JavaScript/TypeScript, and
-          C#. Currently, I am primarily developing in .NET and occasionally
-          using Next.js for work. Additionally, I have experience with a broader
-          tech stack in other languages and frameworks. Please feel free to
-          reach out about my credentials if you would like to learn more!
-        </p>
-      </div>
-      <div className="mt-10">
-        <Image
-          className="h-16 rounded-2xl object-cover md:h-28"
-          src={code}
-          alt="stock image"
-          width={1000}
-          height={200}
-        />
-      </div>
-    </div>
+    </section>
   );
 }

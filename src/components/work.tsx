@@ -1,81 +1,100 @@
-import React from "react";
+const roles = [
+  {
+    company: "Porter Airlines",
+    timeframe: "May 2023 — Present",
+    title: "Web Developer",
+    summary:
+      "Owning the FlyPorter.com experience end-to-end: Next.js, modern .NET services, and performance-focused DX.",
+    highlights: [
+      "Shipped booking flows with improved conversion and accessibility scores",
+      "Introduced component guidelines and design tokens for faster delivery",
+      "Built instrumentation that cut issue triage time dramatically",
+    ],
+    accent: "from-cyan-400 to-blue-500",
+  },
+  {
+    company: "Cloud DX",
+    timeframe: "May 2022 — Apr 2023",
+    title: "Web Dev Lead",
+    summary:
+      "Led the web layer for the vital measurements platform powering remote patient monitoring.",
+    highlights: [
+      "Created reusable UI system for clinician dashboards",
+      "Optimized data-heavy charts for slower clinical devices",
+      "Partnered with product to validate patient journeys quickly",
+    ],
+    accent: "from-amber-300 to-pink-400",
+  },
+  {
+    company: "Code Ninjas",
+    timeframe: "May 2020 — Dec 2020",
+    title: "Instructor",
+    summary: "Helped kids fall in love with code through playful projects.",
+    highlights: [
+      "Guided learners through their first games and websites",
+      "Built mini-curricula that blended logic and creativity",
+    ],
+    accent: "from-emerald-300 to-purple-400",
+  },
+];
 
 export default function Work() {
   return (
-    <div className="my-4">
-      <Job1
-        title={"Porter Airlines"}
-        date={"May 2023 - Present"}
-        description={
-          "Started work at Porter Airlines in May of 2023 as a full-time Web Developer, currently working on flyporter.com"
-        }
-        gradientClass="bg-gradient-to-r from-sky-200 via-cyan-200 to-blue-300"
-      />
-      <Job2
-        title={"Cloud DX"}
-        date={"May 2022 - Apr 2023"}
-        description={
-          "Web Development lead for Cloud DX vital measurements device."
-        }
-        gradientClass="bg-gradient-to-r from-yellow-200 via-orange-200 to-red-200"
-      />
-
-      <Job1
-        title={"Code Ninjas"}
-        date={"May 2020 - Dec 2020"}
-        description={"Taught kids how to code in a fun and engaging way."}
-        gradientClass="bg-gradient-to-r from-lime-200 via-purple-200 to-blue-200"
-      />
-    </div>
-  );
-}
-
-function Job1(props: {
-  title: string;
-  date: string;
-  description: string;
-  gradientClass: string;
-}) {
-  return (
-    <div className="my-8 flex w-full">
-      <div className="mr-4">
-        <h2
-          className={`whitespace-nowrap ${props.gradientClass} min-h-[55px] bg-clip-text text-3xl font-extrabold leading-5 text-transparent md:text-5xl`}
-        >
-          {props.title}
-        </h2>
+    <section className="relative mb-12 overflow-hidden rounded-3xl border border-white/5 bg-gradient-to-br from-slate-950/60 via-slate-900/50 to-slate-900/80 p-6 shadow-2xl backdrop-blur lg:p-8">
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_10%_20%,rgba(56,189,248,0.08),transparent_30%),radial-gradient(circle_at_90%_80%,rgba(244,114,182,0.12),transparent_32%)]" />
+      <div className="relative">
+        <div className="flex items-center gap-3">
+          <div className="h-8 w-8 rounded-full bg-white/5" />
+          <div>
+            <p className="text-xs uppercase tracking-[0.2em] text-cyan-200">
+              Experience
+            </p>
+            <h2 className="text-3xl font-semibold text-white">
+              Places that shaped my craft
+            </h2>
+          </div>
+        </div>
+        <div className="mt-6 space-y-6">
+          {roles.map((role) => (
+            <article
+              key={role.company}
+              className="relative overflow-hidden rounded-2xl border border-white/5 bg-white/5 p-5 shadow-lg"
+            >
+              <div
+                className={`pointer-events-none absolute inset-y-0 left-0 w-1 bg-gradient-to-b ${role.accent}`}
+              />
+              <div className="flex flex-wrap items-center justify-between gap-2 pl-4">
+                <div>
+                  <p className="text-sm uppercase tracking-[0.18em] text-zinc-400">
+                    {role.timeframe}
+                  </p>
+                  <h3 className="text-xl font-semibold text-white">
+                    {role.company}
+                  </h3>
+                  <p className="text-sm text-cyan-200">{role.title}</p>
+                </div>
+                <div className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs font-semibold text-zinc-200">
+                  Shipping-focused
+                </div>
+              </div>
+              <p className="mt-3 max-w-3xl pl-4 text-sm text-zinc-300">
+                {role.summary}
+              </p>
+              <ul className="mt-3 space-y-2 pl-8 text-sm text-zinc-300">
+                {role.highlights.map((highlight) => (
+                  <li
+                    key={highlight}
+                    className="flex items-start gap-2 leading-relaxed"
+                  >
+                    <span className="mt-[7px] h-1.5 w-1.5 rounded-full bg-cyan-300" />
+                    <span>{highlight}</span>
+                  </li>
+                ))}
+              </ul>
+            </article>
+          ))}
+        </div>
       </div>
-      <div>
-        <p className="text-xs text-zinc-700">{props.date}</p>
-        <p className="md:text-md text-xs font-bold text-zinc-400">
-          {props.description}
-        </p>
-      </div>
-    </div>
-  );
-}
-
-function Job2(props: {
-  title: string;
-  date: string;
-  description: string;
-  gradientClass: string;
-}) {
-  return (
-    <div className="my-8 flex w-full justify-between">
-      <div>
-        <p className="text-xs text-zinc-700">{props.date}</p>
-        <p className="md:text-md text-xs font-bold text-zinc-400">
-          {props.description}
-        </p>
-      </div>
-      <div className="ml-4 text-end">
-        <h2
-          className={`whitespace-nowrap ${props.gradientClass} bg-clip-text text-3xl font-extrabold text-transparent md:text-5xl md:text-5xl`}
-        >
-          {props.title}
-        </h2>
-      </div>
-    </div>
+    </section>
   );
 }
