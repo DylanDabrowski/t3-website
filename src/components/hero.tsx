@@ -12,10 +12,26 @@ type SocialLink = {
 };
 
 const socials: SocialLink[] = [
-  { label: "LinkedIn", href: "https://www.linkedin.com/in/dylandabrowski/", icon: <Linkedin className="h-4 w-4" /> },
-  { label: "Github", href: "https://github.com/DylanDabrowski", icon: <Github className="h-4 w-4" /> },
-  { label: "Instagram", href: "https://www.instagram.com/dylandabrowski/", icon: <Instagram className="h-4 w-4" /> },
-  { label: "Mail", href: "mailto:dylandabrowski@gmail.com", icon: <Mail className="h-4 w-4" /> },
+  {
+    label: "LinkedIn",
+    href: "https://www.linkedin.com/in/dylandabrowski/",
+    icon: <Linkedin className="h-4 w-4" />,
+  },
+  {
+    label: "Github",
+    href: "https://github.com/DylanDabrowski",
+    icon: <Github className="h-4 w-4" />,
+  },
+  {
+    label: "Instagram",
+    href: "https://www.instagram.com/dylandabrowski/",
+    icon: <Instagram className="h-4 w-4" />,
+  },
+  {
+    label: "Mail",
+    href: "mailto:dylandabrowski@gmail.com",
+    icon: <Mail className="h-4 w-4" />,
+  },
 ];
 
 const chips = [
@@ -28,7 +44,7 @@ export default function Hero() {
   return (
     <section className="relative mb-16 overflow-hidden rounded-3xl border border-white/5 bg-gradient-to-br from-zinc-900/70 via-slate-900/80 to-slate-950 p-8 shadow-2xl backdrop-blur-lg md:p-10">
       <div className="pointer-events-none absolute -left-20 -top-24 h-64 w-64 rounded-full bg-cyan-400/25 blur-3xl" />
-      <div className="pointer-events-none absolute -right-10 -bottom-16 h-52 w-52 rounded-full bg-violet-500/20 blur-3xl" />
+      <div className="pointer-events-none absolute -bottom-16 -right-10 h-52 w-52 rounded-full bg-violet-500/20 blur-3xl" />
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(255,255,255,0.05),transparent_35%)]" />
       <div className="flex flex-col gap-10 lg:flex-row lg:items-center lg:justify-between">
         <div className="flex flex-1 flex-col gap-6">
@@ -92,7 +108,7 @@ export default function Hero() {
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(34,211,238,0.3),transparent_40%)]" />
             <Image
               className="relative h-64 w-64 rounded-[22px] object-cover md:h-72 md:w-72"
-              src={pfp2 as StaticImageData}
+              src={pfp2 as unknown as StaticImageData}
               alt={"profile picture"}
               width={288}
               height={288}
