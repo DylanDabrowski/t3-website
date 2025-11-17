@@ -1,41 +1,21 @@
-import React from "react";
 import Image from "next/image";
 import type { StaticImageData } from "next/image";
 import { motion } from "framer-motion";
+import { Github, Instagram, Linkedin, Mail, Sparkles } from "lucide-react";
 
 import pfp2 from "../assets/pfp2.JPG";
-import linkedinIcon from "../assets/gradient linkedin.svg";
-import instagramIcon from "../assets/gradient instagram.svg";
-import githubIcon from "../assets/gradient github.svg";
-import mailIcon from "../assets/gradient mail.svg";
 
 type SocialLink = {
   label: string;
   href: string;
-  icon: StaticImageData;
+  icon: React.ReactNode;
 };
 
 const socials: SocialLink[] = [
-  {
-    label: "LinkedIn",
-    href: "https://www.linkedin.com/in/dylandabrowski/",
-    icon: linkedinIcon as StaticImageData,
-  },
-  {
-    label: "Github",
-    href: "https://github.com/DylanDabrowski",
-    icon: githubIcon as StaticImageData,
-  },
-  {
-    label: "Instagram",
-    href: "https://www.instagram.com/dylandabrowski/",
-    icon: instagramIcon as StaticImageData,
-  },
-  {
-    label: "Mail",
-    href: "mailto:dylandabrowski@gmail.com",
-    icon: mailIcon as StaticImageData,
-  },
+  { label: "LinkedIn", href: "https://www.linkedin.com/in/dylandabrowski/", icon: <Linkedin className="h-4 w-4" /> },
+  { label: "Github", href: "https://github.com/DylanDabrowski", icon: <Github className="h-4 w-4" /> },
+  { label: "Instagram", href: "https://www.instagram.com/dylandabrowski/", icon: <Instagram className="h-4 w-4" /> },
+  { label: "Mail", href: "mailto:dylandabrowski@gmail.com", icon: <Mail className="h-4 w-4" /> },
 ];
 
 const chips = [
@@ -55,6 +35,7 @@ export default function Hero() {
           <div className="flex items-center gap-4">
             <div className="h-[1px] w-10 bg-gradient-to-r from-cyan-400/60 to-transparent" />
             <p className="text-xs uppercase tracking-[0.2em] text-zinc-400">
+              <Sparkles className="mr-2 inline-block h-4 w-4 text-cyan-300" />
               Portfolio refresh 2025
             </p>
           </div>
@@ -86,13 +67,9 @@ export default function Hero() {
                 target="_blank"
                 className="group flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm font-semibold text-default-text transition duration-150 hover:-translate-y-0.5 hover:border-cyan-400/60 hover:bg-white/10"
               >
-                <Image
-                  className="opacity-90 transition duration-150 group-hover:opacity-100"
-                  src={social.icon}
-                  alt={`${social.label} icon`}
-                  width={18}
-                  height={18}
-                />
+                <span className="text-white/80 transition duration-150 group-hover:text-white">
+                  {social.icon}
+                </span>
                 {social.label}
               </a>
             ))}

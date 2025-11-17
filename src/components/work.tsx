@@ -1,3 +1,5 @@
+import { Layers } from "lucide-react";
+
 const roles = [
   {
     company: "Porter Airlines",
@@ -44,7 +46,9 @@ export default function Work() {
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_10%_20%,rgba(56,189,248,0.08),transparent_30%),radial-gradient(circle_at_90%_80%,rgba(244,114,182,0.12),transparent_32%)]" />
       <div className="relative">
         <div className="flex items-center gap-3">
-          <div className="h-8 w-8 rounded-full bg-white/5" />
+          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-white">
+            <Layers className="h-5 w-5" />
+          </div>
           <div>
             <p className="text-xs uppercase tracking-[0.2em] text-cyan-200">
               Experience

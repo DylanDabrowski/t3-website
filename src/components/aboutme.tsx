@@ -1,4 +1,5 @@
 import { motion } from "framer-motion";
+import { Compass, Sparkles } from "lucide-react";
 
 const timeline = [
   {
@@ -15,8 +16,7 @@ const timeline = [
   {
     title: "Community",
     role: "Mentor & collaborator",
-    detail:
-      "Teaching, pairing, and sharing across dev communities in Toronto.",
+    detail: "Teaching, pairing, and sharing across dev communities in Toronto.",
   },
 ];
 
@@ -30,13 +30,13 @@ const focuses = [
 const stats = [
   { label: "Years shipping", value: "4+", accent: "from-cyan-400 to-blue-500" },
   {
-    label: "Products launched",
-    value: "10",
+    label: "Products shipped",
+    value: "6",
     accent: "from-emerald-400 to-teal-500",
   },
   {
     label: "Fave stack",
-    value: "Next.js + .NET",
+    value: "Next.js + Tailwind",
     accent: "from-violet-400 to-indigo-500",
   },
 ];
@@ -48,9 +48,11 @@ export default function AboutMe() {
       <div className="relative flex flex-col gap-10">
         <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
           <div className="flex items-center gap-3">
-            <div className="h-10 w-10 rounded-2xl bg-white/5 backdrop-blur" />
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-cyan-400/20 text-cyan-100">
+              <Sparkles className="h-4 w-4" />
+            </div>
             <div>
-              <p className="text-sm uppercase tracking-[0.2em] text-cyan-300">
+              <p className="text-xs uppercase tracking-[0.22em] text-cyan-300">
                 About
               </p>
               <h2 className="text-3xl font-semibold text-default-text md:text-4xl">
@@ -64,17 +66,17 @@ export default function AboutMe() {
           </p>
         </div>
 
-        <div className="grid gap-6 md:grid-cols-3">
+        <div className="grid gap-3 md:grid-cols-3">
           {stats.map((stat) => (
             <div
               key={stat.label}
               className="relative overflow-hidden rounded-2xl border border-white/5 bg-white/5 p-5 shadow-lg"
             >
               <div
-                className={`absolute inset-0 bg-gradient-to-br ${stat.accent} opacity-20 blur-lg`}
+                className={`absolute inset-0 bg-gradient-to-br ${stat.accent} opacity-15 blur-lg`}
               />
               <div className="relative">
-                <p className="text-sm uppercase tracking-[0.15em] text-zinc-400">
+                <p className="text-xs uppercase tracking-[0.16em] text-zinc-200">
                   {stat.label}
                 </p>
                 <p className="mt-2 text-3xl font-semibold text-white">
@@ -85,7 +87,7 @@ export default function AboutMe() {
           ))}
         </div>
 
-        <div className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
+        <div className="grid gap-6 lg:grid-cols-[1.05fr_0.95fr]">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -93,16 +95,18 @@ export default function AboutMe() {
             viewport={{ once: true, amount: 0.3 }}
             className="rounded-2xl border border-white/5 bg-white/5 p-6 shadow-lg"
           >
-            <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-400/20 text-emerald-200">
+                <Compass className="h-4 w-4" />
+              </div>
               <div>
                 <p className="text-xs uppercase tracking-[0.2em] text-emerald-300">
                   Current energy
                 </p>
-                <h3 className="mt-2 text-2xl font-semibold text-default-text">
+                <h3 className="mt-1 text-2xl font-semibold text-default-text">
                   Ship. Iterate. Polish.
                 </h3>
               </div>
-              <div className="h-12 w-12 rounded-full bg-gradient-to-br from-emerald-400/30 to-cyan-400/40 blur-sm" />
             </div>
             <p className="mt-4 text-sm text-zinc-300 md:text-base">
               I blend product sense with engineering discipline to deliver
@@ -129,7 +133,7 @@ export default function AboutMe() {
             className="rounded-2xl border border-white/5 bg-gradient-to-br from-white/5 via-white/10 to-white/5 p-6 shadow-lg"
           >
             <div className="flex items-center gap-3">
-              <div className="h-2 w-2 rounded-full bg-cyan-400 shadow-[0_0_12px_rgba(34,211,238,0.7)]" />
+              <div className="flex h-2.5 w-2.5 items-center justify-center rounded-full bg-cyan-400 shadow-[0_0_12px_rgba(34,211,238,0.7)]" />
               <p className="text-sm uppercase tracking-[0.2em] text-zinc-400">
                 Snapshots
               </p>
