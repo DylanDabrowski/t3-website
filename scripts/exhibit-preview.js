@@ -19,7 +19,7 @@ const REPO_FULL_NAME = process.env.GITHUB_REPOSITORY;
 const COMMIT_SHA = process.env.GITHUB_SHA;
 const UPLOAD_BATCH_SIZE = Number(process.env.PREVIEW_UPLOAD_BATCH_SIZE || "25");
 const PREVIEW_INTERACTIVE = process.env.PREVIEW_INTERACTIVE !== "0";
-const SCRIPT_VERSION = "preview-script-v21";
+const SCRIPT_VERSION = "preview-script-v22";
 
 if (!PREVIEW_UPLOAD_URL || !PREVIEW_UPLOAD_TOKEN) {
   console.error("Missing PREVIEW_UPLOAD_URL or PREVIEW_UPLOAD_TOKEN");
@@ -123,6 +123,31 @@ function stripJsonTrailingCommas(content) {
   return content.replace(/,\s*([}\]])/g, "$1");
 }
 
+function extractAliasFromRaw(raw, configPath) {
+  const baseUrlMatch = raw.match(/"baseUrl"\s*:\s*"([^"]+)"/);
+  const baseUrl = baseUrlMatch ? baseUrlMatch[1] : "";
+  const baseDir = configPath ? path.dirname(configPath) : ROOT;
+  const aliasRegex = /"([^"]+\/\*)"\s*:\s*\[\s*"([^"]+)"\s*\]/g;
+  const aliases = [];
+  let match = aliasRegex.exec(raw);
+  while (match) {
+    const key = match[1];
+    const target = match[2];
+    if (key.endsWith("/*")) {
+      const find = key.replace(/\/\*$/, "");
+      const replacement = path.resolve(
+        baseDir,
+        baseUrl,
+        target.replace(/\/\*$/, ""),
+      );
+      const regexSource = `^${escapeRegExp(find)}/`;
+      aliases.push({ find, replacement, regexSource, needsTrailingSlash: true });
+    }
+    match = aliasRegex.exec(raw);
+  }
+  return aliases;
+}
+
 function resolveConfigExtends(basePath, extendValue) {
   if (!extendValue) return null;
   if (extendValue.startsWith(".") || extendValue.startsWith("/")) {
@@ -172,10 +197,16 @@ function getProjectAliases() {
   const aliases = [];
   let config = null;
   let configPath = null;
+  let rawContent = null;
 
   for (const filename of candidates) {
     const full = path.join(ROOT, filename);
     if (!fs.existsSync(full)) continue;
+    try {
+      rawContent = fs.readFileSync(full, "utf8");
+    } catch {
+      rawContent = null;
+    }
     config = loadTsConfig(full);
     configPath = full;
     if (config) break;
@@ -197,6 +228,10 @@ function getProjectAliases() {
       ? `^${escapeRegExp(find)}/`
       : null;
     aliases.push({ find, replacement, regexSource, needsTrailingSlash: hasWildcard });
+  }
+
+  if (aliases.length === 0 && rawContent && configPath) {
+    aliases.push(...extractAliasFromRaw(rawContent, configPath));
   }
 
   return aliases;
