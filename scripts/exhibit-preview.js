@@ -534,11 +534,11 @@ export default function Head({ children }: any) {
     if (previewTailwindConfig) {
       console.log(`Preview Tailwind config: ${previewTailwindConfig}`);
     }
-    const tailwindConfigRel = previewTailwindConfig
-      ? path.relative(PREVIEW_DIR, previewTailwindConfig).replace(/\\/g, "/")
+    const tailwindConfigPath = previewTailwindConfig
+      ? toPosixPath(previewTailwindConfig)
       : null;
-    const tailwindPluginConfig = tailwindConfigRel
-      ? `{ config: ${JSON.stringify(tailwindConfigRel)} }`
+    const tailwindPluginConfig = tailwindConfigPath
+      ? `{ config: ${JSON.stringify(tailwindConfigPath)} }`
       : "{}";
     fs.writeFileSync(
       path.join(PREVIEW_DIR, "postcss.config.cjs"),
