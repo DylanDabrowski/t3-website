@@ -765,6 +765,17 @@ import { components } from "./components";
 
 type PreviewStatus = "loading" | "ready" | "error";
 
+function resolveProps() {
+  const params = new URLSearchParams(window.location.search);
+  const raw = params.get("props");
+  if (!raw) return {};
+  try {
+    return JSON.parse(raw);
+  } catch {
+    return {};
+  }
+}
+
 export default function App() {
   const [status, setStatus] = useState<PreviewStatus>("loading");
   const [error, setError] = useState<string | null>(null);
@@ -774,6 +785,7 @@ export default function App() {
     const params = new URLSearchParams(window.location.search);
     return params.get("path");
   }, []);
+  const props = useMemo(() => resolveProps(), []);
 
   useEffect(() => {
     if (!targetPath) {
