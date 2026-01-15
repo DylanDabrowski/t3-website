@@ -61,6 +61,8 @@ const aliasCandidates = [
   { find: "next/navigation", file: "stubs/next-navigation.ts" },
   { find: "next/router", file: "stubs/next-router.ts" },
   { find: "next/head", file: "stubs/next-head.tsx" },
+  { find: ".prisma/client/index-browser", file: "stubs/prisma-client.ts" },
+  { find: "@prisma/client", file: "stubs/prisma-client.ts" },
 ];
 
 function walk(dir) {
@@ -691,6 +693,16 @@ export function useSearchParams() {
 export default function Head({ children }: any) {
   return <>{children}</>;
 }
+`,
+  );
+
+  fs.writeFileSync(
+    path.join(stubDir, "prisma-client.ts"),
+    `export const PrismaClient = function PrismaClient() {
+  throw new Error("PrismaClient is not available in previews.");
+};
+export const Prisma = {};
+export default {};
 `,
   );
 
@@ -1511,6 +1523,8 @@ export default defineConfig({
       { find: "next/navigation", replacement: path.join(stubRoot, "next-navigation.ts") },
       { find: "next/router", replacement: path.join(stubRoot, "next-router.ts") },
       { find: "next/head", replacement: path.join(stubRoot, "next-head.tsx") },
+      { find: ".prisma/client/index-browser", replacement: path.join(stubRoot, "prisma-client.ts") },
+      { find: "@prisma/client", replacement: path.join(stubRoot, "prisma-client.ts") },
     ],
   },
   build: {
