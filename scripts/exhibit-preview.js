@@ -19,7 +19,7 @@ const REPO_FULL_NAME = process.env.GITHUB_REPOSITORY;
 const COMMIT_SHA = process.env.GITHUB_SHA;
 const UPLOAD_BATCH_SIZE = Number(process.env.PREVIEW_UPLOAD_BATCH_SIZE || "25");
 const PREVIEW_INTERACTIVE = process.env.PREVIEW_INTERACTIVE !== "0";
-const SCRIPT_VERSION = "preview-script-v20";
+const SCRIPT_VERSION = "preview-script-v21";
 
 if (!PREVIEW_UPLOAD_URL || !PREVIEW_UPLOAD_TOKEN) {
   console.error("Missing PREVIEW_UPLOAD_URL or PREVIEW_UPLOAD_TOKEN");
@@ -119,6 +119,10 @@ function stripJsonComments(content) {
     .replace(/^\s*\/\/.*$/gm, "");
 }
 
+function stripJsonTrailingCommas(content) {
+  return content.replace(/,\s*([}\]])/g, "$1");
+}
+
 function resolveConfigExtends(basePath, extendValue) {
   if (!extendValue) return null;
   if (extendValue.startsWith(".") || extendValue.startsWith("/")) {
@@ -139,7 +143,8 @@ function loadTsConfig(configPath, visited = new Set()) {
   visited.add(configPath);
   try {
     const raw = fs.readFileSync(configPath, "utf8");
-    const parsed = JSON.parse(stripJsonComments(raw));
+    const cleaned = stripJsonTrailingCommas(stripJsonComments(raw));
+    const parsed = JSON.parse(cleaned);
     const extendPath = resolveConfigExtends(configPath, parsed.extends);
     const base = extendPath ? loadTsConfig(extendPath, visited) : null;
     const baseCompiler = base?.compilerOptions || {};
@@ -531,6 +536,13 @@ function writePreviewApp(components, globalCssPath) {
   const srcDir = path.join(PREVIEW_DIR, "src");
   const stubDir = path.join(srcDir, "stubs");
   const projectAliases = normalizeAliasEntries(getProjectAliases());
+  if (projectAliases.length > 0) {
+    console.log(
+      `Preview aliases: ${projectAliases
+        .map((alias) => alias.find)
+        .join(", ")}`,
+    );
+  }
   fs.mkdirSync(srcDir, { recursive: true });
   fs.mkdirSync(stubDir, { recursive: true });
 
