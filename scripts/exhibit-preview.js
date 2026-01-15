@@ -27,6 +27,23 @@ if (!PREVIEW_UPLOAD_URL || !PREVIEW_UPLOAD_TOKEN) {
 }
 
 console.log(`Exhibit preview script: ${SCRIPT_VERSION}`);
+function describeUploadUrl(value) {
+  try {
+    const url = new URL(value);
+    return `${url.origin}${url.pathname}`;
+  } catch {
+    return value;
+  }
+}
+console.log(`Preview upload URL: ${describeUploadUrl(PREVIEW_UPLOAD_URL)}`);
+if (REPO_FULL_NAME) {
+  console.log(`Repository: ${REPO_FULL_NAME}`);
+}
+if (COMMIT_SHA) {
+  console.log(`Commit: ${COMMIT_SHA}`);
+}
+console.log(`Upload batch size: ${UPLOAD_BATCH_SIZE}`);
+console.log(`Interactive previews: ${PREVIEW_INTERACTIVE ? "enabled" : "disabled"}`);
 
 const exts = [".tsx", ".jsx"];
 const ignoredDirs = new Set([
@@ -1097,6 +1114,7 @@ function runCommand(command, args, options = {}) {
 
 async function buildInteractiveBundle(components, globalCssPath) {
   if (!PREVIEW_INTERACTIVE) return null;
+  console.log("Building interactive preview bundle...");
   const bundleDir = path.join(PREVIEW_DIR, "bundle");
   const distDir = path.join(bundleDir, "dist");
   const assetsDir = path.join(distDir, "assets");
@@ -1523,6 +1541,9 @@ export default defineConfig({
 
   if (!js) return null;
 
+  console.log(
+    `Interactive bundle ready (js ${js.length} chars, css ${css.length} chars).`,
+  );
   return { js, css };
 }
 
@@ -1555,8 +1576,11 @@ async function renderScreenshots(componentPaths) {
   const browser = await chromium.launch();
   const page = await browser.newPage({ viewport: { width: 1280, height: 720 } });
   const assets = [];
+  console.log(`Rendering ${componentPaths.length} component previews...`);
 
-  for (const rel of componentPaths) {
+  for (let i = 0; i < componentPaths.length; i += 1) {
+    const rel = componentPaths[i];
+    console.log(`Rendering (${i + 1}/${componentPaths.length}) ${rel}`);
     const url = `${PREVIEW_URL}/?path=${encodeURIComponent(rel)}`;
     try {
       await page.goto(url, { waitUntil: "networkidle" });
@@ -1571,8 +1595,10 @@ async function renderScreenshots(componentPaths) {
         imageUrl: dataUrl,
         status: "COMPLETED",
       });
+      console.log(`Rendered ${rel}`);
     } catch (err) {
       const message = err instanceof Error ? err.message : "Render failed";
+      console.warn(`Render failed for ${rel}: ${message}`);
       assets.push({
         componentPath: rel,
         status: "FAILED",
@@ -1586,6 +1612,9 @@ async function renderScreenshots(componentPaths) {
 }
 
 async function uploadBatch(assets, jobId, bundle) {
+  console.log(
+    `Uploading batch (${assets.length} assets${bundle ? ", bundle included" : ""})...`,
+  );
   const payload = {
     repositoryFullName: REPO_FULL_NAME,
     commitSha: COMMIT_SHA,
@@ -1605,9 +1634,17 @@ async function uploadBatch(assets, jobId, bundle) {
 
   if (!res.ok) {
     const text = await res.text();
+    console.error(`Upload failed with status ${res.status}: ${text}`);
     throw new Error(`Upload failed (${res.status}): ${text}`);
   }
   const data = await res.json().catch(() => ({}));
+  if (data?.assetsSaved !== undefined) {
+    console.log(
+      `Upload success: jobId=${data?.jobId || jobId || "new"} assetsSaved=${data.assetsSaved}`,
+    );
+  } else {
+    console.log(`Upload success: jobId=${data?.jobId || jobId || "new"}`);
+  }
   if (data?.jobId) {
     return data.jobId;
   }
@@ -1615,6 +1652,19 @@ async function uploadBatch(assets, jobId, bundle) {
 }
 
 async function upload(assets, bundle) {
+  const completedCount = assets.filter((asset) => asset.status === "COMPLETED")
+    .length;
+  const failed = assets.filter((asset) => asset.status === "FAILED");
+  console.log(
+    `Uploading previews (${completedCount} completed, ${failed.length} failed).`,
+  );
+  if (failed.length > 0) {
+    const sample = failed
+      .slice(0, 5)
+      .map((asset) => `${asset.componentPath}: ${asset.errorMessage || "failed"}`)
+      .join("; ");
+    console.warn(`Failed preview samples: ${sample}`);
+  }
   let jobId;
   if (bundle) {
     jobId = await uploadBatch([], jobId, bundle);
@@ -1634,12 +1684,18 @@ async function main() {
     console.log("No components found");
     return;
   }
+  console.log(`Found ${components.length} component files.`);
 
   if (fs.existsSync(PREVIEW_DIR)) {
     fs.rmSync(PREVIEW_DIR, { recursive: true, force: true });
   }
 
   const globalCssPath = findGlobalCss();
+  if (globalCssPath) {
+    console.log(`Detected global CSS at ${globalCssPath}`);
+  } else {
+    console.log("No global CSS detected.");
+  }
   writePreviewApp(components, globalCssPath);
 
   let interactiveBundle = null;
