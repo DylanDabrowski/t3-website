@@ -80,19 +80,26 @@ jobs:
             $INSTALL_CMD
           fi
 
-          if [ "$PM" = "pnpm" ]; then
-            pnpm add -D vite @vitejs/plugin-react playwright tailwindcss postcss autoprefixer
-          elif [ "$PM" = "yarn" ]; then
-            yarn add -D vite @vitejs/plugin-react playwright tailwindcss postcss autoprefixer
-          else
-            npm install -D vite @vitejs/plugin-react playwright tailwindcss postcss autoprefixer
-            DEV_STATUS=$?
-            if [ $DEV_STATUS -ne 0 ]; then
-              npm install -D vite @vitejs/plugin-react playwright tailwindcss postcss autoprefixer --legacy-peer-deps
+          MISSING_DEPS=()
+          for pkg in vite @vitejs/plugin-react playwright tailwindcss postcss autoprefixer; do
+            node -e "require.resolve('${pkg}')" >/dev/null 2>&1 || MISSING_DEPS+=("${pkg}")
+          done
+
+          if [ "${#MISSING_DEPS[@]}" -gt 0 ]; then
+            if [ "$PM" = "pnpm" ]; then
+              pnpm add -D "${MISSING_DEPS[@]}"
+            elif [ "$PM" = "yarn" ]; then
+              yarn add -D "${MISSING_DEPS[@]}"
+            else
+              npm install -D "${MISSING_DEPS[@]}"
               DEV_STATUS=$?
-            fi
-            if [ $DEV_STATUS -ne 0 ]; then
-              exit $DEV_STATUS
+              if [ $DEV_STATUS -ne 0 ]; then
+                npm install -D "${MISSING_DEPS[@]}" --legacy-peer-deps
+                DEV_STATUS=$?
+              fi
+              if [ $DEV_STATUS -ne 0 ]; then
+                exit $DEV_STATUS
+              fi
             fi
           fi
 
