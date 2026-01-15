@@ -86,6 +86,14 @@ jobs:
             yarn add -D vite @vitejs/plugin-react playwright tailwindcss postcss autoprefixer
           else
             npm install -D vite @vitejs/plugin-react playwright tailwindcss postcss autoprefixer
+            DEV_STATUS=$?
+            if [ $DEV_STATUS -ne 0 ]; then
+              npm install -D vite @vitejs/plugin-react playwright tailwindcss postcss autoprefixer --legacy-peer-deps
+              DEV_STATUS=$?
+            fi
+            if [ $DEV_STATUS -ne 0 ]; then
+              exit $DEV_STATUS
+            fi
           fi
 
           npx playwright install --with-deps
