@@ -19,7 +19,7 @@ const REPO_FULL_NAME = process.env.GITHUB_REPOSITORY;
 const COMMIT_SHA = process.env.GITHUB_SHA;
 const UPLOAD_BATCH_SIZE = Number(process.env.PREVIEW_UPLOAD_BATCH_SIZE || "25");
 const PREVIEW_INTERACTIVE = process.env.PREVIEW_INTERACTIVE !== "0";
-const SCRIPT_VERSION = "preview-script-v18";
+const SCRIPT_VERSION = "preview-script-v19";
 
 if (!PREVIEW_UPLOAD_URL || !PREVIEW_UPLOAD_TOKEN) {
   console.error("Missing PREVIEW_UPLOAD_URL or PREVIEW_UPLOAD_TOKEN");
@@ -107,6 +107,61 @@ function ensureTailwindConfigForPostcss(configPath) {
 
 function toPosixPath(value) {
   return value.replace(/\\/g, "/");
+}
+
+function stripJsonComments(content) {
+  return content
+    .replace(/\/\*[\s\S]*?\*\//g, "")
+    .replace(/^\s*\/\/.*$/gm, "");
+}
+
+function getProjectAliases() {
+  const candidates = ["tsconfig.json", "jsconfig.json"];
+  const aliases = [];
+  let config = null;
+
+  for (const filename of candidates) {
+    const full = path.join(ROOT, filename);
+    if (!fs.existsSync(full)) continue;
+    try {
+      const raw = fs.readFileSync(full, "utf8");
+      config = JSON.parse(stripJsonComments(raw));
+      break;
+    } catch {
+      config = null;
+    }
+  }
+
+  const compilerOptions = config?.compilerOptions || {};
+  const baseUrl = compilerOptions.baseUrl
+    ? path.resolve(ROOT, compilerOptions.baseUrl)
+    : ROOT;
+  const paths = compilerOptions.paths || {};
+
+  for (const [key, targets] of Object.entries(paths)) {
+    if (!Array.isArray(targets) || targets.length === 0) continue;
+    const find = key.replace(/\/\*$/, "");
+    const target = String(targets[0]).replace(/\/\*$/, "");
+    const replacement = path.resolve(baseUrl, target);
+    aliases.push({ find, replacement });
+  }
+
+  return aliases;
+}
+
+function normalizeAliasEntries(entries) {
+  const seen = new Set();
+  const unique = [];
+  for (const entry of entries) {
+    if (!entry?.find || !entry?.replacement) continue;
+    if (seen.has(entry.find)) continue;
+    seen.add(entry.find);
+    unique.push({
+      find: entry.find,
+      replacement: toPosixPath(entry.replacement),
+    });
+  }
+  return unique;
 }
 
 function writeTailwindPreviewConfig(configPath) {
@@ -424,6 +479,7 @@ function writeNormalizedGlobalCss(globalCssPath) {
 function writePreviewApp(components, globalCssPath) {
   const srcDir = path.join(PREVIEW_DIR, "src");
   const stubDir = path.join(srcDir, "stubs");
+  const projectAliases = normalizeAliasEntries(getProjectAliases());
   fs.mkdirSync(srcDir, { recursive: true });
   fs.mkdirSync(stubDir, { recursive: true });
 
@@ -678,6 +734,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const repoRoot = path.resolve(__dirname, "..");
 const stubAliases = ${JSON.stringify(aliasCandidates)};
+const projectAliases = ${JSON.stringify(projectAliases)};
 const tailwindMajor = ${JSON.stringify(tailwindMajor)};
 
 function parseImportRule(rule) {
@@ -873,7 +930,13 @@ export default defineConfig({
   plugins: [cssNormalizePlugin(), react()],
   resolve: {
     alias: [
-      { find: "@", replacement: path.resolve(repoRoot, "src") },
+      ...projectAliases.map((alias) => ({
+        find: alias.find,
+        replacement: alias.replacement,
+      })),
+      ...projectAliases.some((alias) => alias.find === "@")
+        ? []
+        : [{ find: "@", replacement: path.resolve(repoRoot, "src") }],
       ...stubAliases.map((alias) => ({
         find: alias.find,
         replacement: path.resolve(__dirname, "src/" + alias.file),
@@ -939,6 +1002,7 @@ async function buildInteractiveBundle(components, globalCssPath) {
   const bundleDir = path.join(PREVIEW_DIR, "bundle");
   const distDir = path.join(bundleDir, "dist");
   const assetsDir = path.join(distDir, "assets");
+  const projectAliases = normalizeAliasEntries(getProjectAliases());
   fs.mkdirSync(bundleDir, { recursive: true });
 
   const tailwindMajor = getTailwindMajorVersion();
@@ -1112,6 +1176,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const repoRoot = path.resolve(__dirname, "..", "..");
 const stubRoot = path.resolve(repoRoot, ".exhibit-preview", "src", "stubs");
+const projectAliases = ${JSON.stringify(projectAliases)};
 const tailwindMajor = ${JSON.stringify(tailwindMajor)};
 
 function parseImportRule(rule) {
@@ -1306,7 +1371,13 @@ export default defineConfig({
   },
   resolve: {
     alias: [
-      { find: "@", replacement: path.resolve(repoRoot, "src") },
+      ...projectAliases.map((alias) => ({
+        find: alias.find,
+        replacement: alias.replacement,
+      })),
+      ...projectAliases.some((alias) => alias.find === "@")
+        ? []
+        : [{ find: "@", replacement: path.resolve(repoRoot, "src") }],
       { find: "next/link", replacement: path.join(stubRoot, "next-link.tsx") },
       { find: "next/image", replacement: path.join(stubRoot, "next-image.tsx") },
       { find: "next/navigation", replacement: path.join(stubRoot, "next-navigation.ts") },
