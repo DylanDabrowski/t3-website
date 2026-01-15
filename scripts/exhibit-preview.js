@@ -1576,7 +1576,7 @@ ${bundle.css || ""}
     <script>
       window.__EXHIBIT_COMPONENT_PATH__ = ${JSON.stringify(componentPath)};
     </script>
-    <script>
+    <script type="module">
 ${bundle.js}
     </script>
   </body>
@@ -1589,16 +1589,49 @@ async function renderScreenshots(componentPaths) {
   const page = await browser.newPage({ viewport: { width: 1280, height: 720 } });
   const assets = [];
   console.log(`Rendering ${componentPaths.length} component previews...`);
+  let currentComponent = "unknown";
+
+  page.on("pageerror", (err) => {
+    const message = err instanceof Error ? err.message : String(err);
+    console.warn(`Page error [${currentComponent}]: ${message}`);
+  });
+  page.on("console", (msg) => {
+    const type = msg.type();
+    if (type === "error" || type === "warning") {
+      console.warn(`Console ${type} [${currentComponent}]: ${msg.text()}`);
+    }
+  });
 
   for (let i = 0; i < componentPaths.length; i += 1) {
     const rel = componentPaths[i];
+    currentComponent = rel;
     console.log(`Rendering (${i + 1}/${componentPaths.length}) ${rel}`);
     const url = `${PREVIEW_URL}/?path=${encodeURIComponent(rel)}`;
     try {
       await page.goto(url, { waitUntil: "networkidle" });
-      await page.waitForSelector('[data-exhibit-preview="ready"]', {
-        timeout: 15000,
-      });
+      await page.waitForSelector(
+        '[data-exhibit-preview="ready"], [data-exhibit-preview="error"]',
+        {
+          timeout: 15000,
+        },
+      );
+      const status =
+        (await page.getAttribute("#exhibit-preview", "data-exhibit-preview")) ||
+        "error";
+      if (status !== "ready") {
+        const errorText = await page
+          .locator("#exhibit-preview")
+          .innerText()
+          .catch(() => "");
+        const message = errorText.trim() || "Preview error";
+        assets.push({
+          componentPath: rel,
+          status: "FAILED",
+          errorMessage: message,
+        });
+        console.warn(`Preview error for ${rel}: ${message}`);
+        continue;
+      }
       const locator = page.locator("#exhibit-preview");
       const buffer = await locator.screenshot({ type: "jpeg", quality: 80 });
       const dataUrl = `data:image/jpeg;base64,${buffer.toString("base64")}`;
