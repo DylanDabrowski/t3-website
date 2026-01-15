@@ -19,7 +19,7 @@ const REPO_FULL_NAME = process.env.GITHUB_REPOSITORY;
 const COMMIT_SHA = process.env.GITHUB_SHA;
 const UPLOAD_BATCH_SIZE = Number(process.env.PREVIEW_UPLOAD_BATCH_SIZE || "25");
 const PREVIEW_INTERACTIVE = process.env.PREVIEW_INTERACTIVE !== "0";
-const SCRIPT_VERSION = "preview-script-v17";
+const SCRIPT_VERSION = "preview-script-v18";
 
 if (!PREVIEW_UPLOAD_URL || !PREVIEW_UPLOAD_TOKEN) {
   console.error("Missing PREVIEW_UPLOAD_URL or PREVIEW_UPLOAD_TOKEN");
@@ -531,6 +531,9 @@ export default function Head({ children }: any) {
     const tailwindPlugin =
       tailwindMajor && tailwindMajor >= 4 ? "@tailwindcss/postcss" : "tailwindcss";
     const previewTailwindConfig = writeTailwindPreviewConfig(tailwindConfig);
+    if (previewTailwindConfig) {
+      console.log(`Preview Tailwind config: ${previewTailwindConfig}`);
+    }
     const tailwindConfigRel = previewTailwindConfig
       ? path.relative(PREVIEW_DIR, previewTailwindConfig).replace(/\\/g, "/")
       : null;
