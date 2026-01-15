@@ -115,26 +115,66 @@ function stripJsonComments(content) {
     .replace(/^\s*\/\/.*$/gm, "");
 }
 
+function resolveConfigExtends(basePath, extendValue) {
+  if (!extendValue) return null;
+  if (extendValue.startsWith(".") || extendValue.startsWith("/")) {
+    const candidate = path.resolve(path.dirname(basePath), extendValue);
+    if (fs.existsSync(candidate)) return candidate;
+    if (fs.existsSync(`${candidate}.json`)) return `${candidate}.json`;
+    return null;
+  }
+  try {
+    return require.resolve(extendValue, { paths: [path.dirname(basePath)] });
+  } catch {
+    return null;
+  }
+}
+
+function loadTsConfig(configPath, visited = new Set()) {
+  if (!configPath || visited.has(configPath)) return null;
+  visited.add(configPath);
+  try {
+    const raw = fs.readFileSync(configPath, "utf8");
+    const parsed = JSON.parse(stripJsonComments(raw));
+    const extendPath = resolveConfigExtends(configPath, parsed.extends);
+    const base = extendPath ? loadTsConfig(extendPath, visited) : null;
+    const baseCompiler = base?.compilerOptions || {};
+    const parsedCompiler = parsed.compilerOptions || {};
+    const mergedCompiler = {
+      ...baseCompiler,
+      ...parsedCompiler,
+      paths: {
+        ...(baseCompiler.paths || {}),
+        ...(parsedCompiler.paths || {}),
+      },
+    };
+    return {
+      ...base,
+      ...parsed,
+      compilerOptions: mergedCompiler,
+    };
+  } catch {
+    return null;
+  }
+}
+
 function getProjectAliases() {
   const candidates = ["tsconfig.json", "jsconfig.json"];
   const aliases = [];
   let config = null;
+  let configPath = null;
 
   for (const filename of candidates) {
     const full = path.join(ROOT, filename);
     if (!fs.existsSync(full)) continue;
-    try {
-      const raw = fs.readFileSync(full, "utf8");
-      config = JSON.parse(stripJsonComments(raw));
-      break;
-    } catch {
-      config = null;
-    }
+    config = loadTsConfig(full);
+    configPath = full;
+    if (config) break;
   }
 
   const compilerOptions = config?.compilerOptions || {};
   const baseUrl = compilerOptions.baseUrl
-    ? path.resolve(ROOT, compilerOptions.baseUrl)
+    ? path.resolve(path.dirname(configPath || ROOT), compilerOptions.baseUrl)
     : ROOT;
   const paths = compilerOptions.paths || {};
 
