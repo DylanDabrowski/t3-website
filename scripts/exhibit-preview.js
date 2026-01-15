@@ -595,7 +595,7 @@ export default function App() {
           Preview error: {error}
         </div>
       )}
-      {status === "ready" && Component ? <Component /> : null}
+      {status === "ready" && Component ? <Component {...props} /> : null}
     </div>
   );
 }
@@ -926,12 +926,26 @@ function resolveTargetPath() {
   return params.get("path");
 }
 
+function resolveProps() {
+  const win = window as any;
+  if (win.__EXHIBIT_COMPONENT_PROPS__) return win.__EXHIBIT_COMPONENT_PROPS__;
+  const params = new URLSearchParams(window.location.search);
+  const raw = params.get("props");
+  if (!raw) return {};
+  try {
+    return JSON.parse(raw);
+  } catch {
+    return {};
+  }
+}
+
 export default function BundleApp() {
   const [status, setStatus] = useState<PreviewStatus>("loading");
   const [error, setError] = useState<string | null>(null);
   const [Component, setComponent] = useState<any>(null);
 
   const targetPath = useMemo(() => resolveTargetPath(), []);
+  const props = useMemo(() => resolveProps(), []);
 
   useEffect(() => {
     if (!targetPath) {
@@ -985,7 +999,7 @@ export default function BundleApp() {
           Preview error: {error}
         </div>
       )}
-      {status === "ready" && Component ? <Component /> : null}
+      {status === "ready" && Component ? <Component {...props} /> : null}
     </div>
   );
 }
