@@ -105,6 +105,37 @@ function ensureTailwindConfigForPostcss(configPath) {
   }
 }
 
+function toPosixPath(value) {
+  return value.replace(/\\/g, "/");
+}
+
+function writeTailwindPreviewConfig(configPath) {
+  const transpiled = ensureTailwindConfigForPostcss(configPath);
+  const previewConfigPath = path.join(PREVIEW_DIR, "tailwind.preview.cjs");
+  const defaultContent = [
+    path.join(ROOT, "src/**/*.{js,ts,jsx,tsx,mdx}"),
+    path.join(ROOT, "app/**/*.{js,ts,jsx,tsx,mdx}"),
+    path.join(ROOT, "pages/**/*.{js,ts,jsx,tsx,mdx}"),
+    path.join(ROOT, "components/**/*.{js,ts,jsx,tsx,mdx}"),
+  ].map(toPosixPath);
+  const configSource = `let userConfig = {};
+${
+  transpiled
+    ? `try {
+  const loaded = require(${JSON.stringify(toPosixPath(transpiled))});
+  userConfig = loaded && (loaded.default || loaded);
+} catch {}
+`
+    : ""
+}
+const defaultContent = ${JSON.stringify(defaultContent, null, 2)};
+const content = userConfig?.content || userConfig?.purge || defaultContent;
+module.exports = { ...userConfig, content };
+`;
+  fs.writeFileSync(previewConfigPath, configSource);
+  return previewConfigPath;
+}
+
 function getTailwindMajorVersion() {
   try {
     const pkgPath = path.join(ROOT, "package.json");
@@ -493,17 +524,15 @@ export default function Head({ children }: any) {
   );
 
   const tailwindConfig = getTailwindConfigPath();
-  const resolvedTailwindConfig = ensureTailwindConfigForPostcss(tailwindConfig);
   const usesTailwind =
     Boolean(tailwindConfig) || globalCssHasTailwind(globalCssPath);
   if (usesTailwind) {
     const tailwindMajor = getTailwindMajorVersion();
     const tailwindPlugin =
       tailwindMajor && tailwindMajor >= 4 ? "@tailwindcss/postcss" : "tailwindcss";
-    const tailwindConfigRel = resolvedTailwindConfig
-      ? path
-          .relative(PREVIEW_DIR, resolvedTailwindConfig)
-          .replace(/\\/g, "/")
+    const previewTailwindConfig = writeTailwindPreviewConfig(tailwindConfig);
+    const tailwindConfigRel = previewTailwindConfig
+      ? path.relative(PREVIEW_DIR, previewTailwindConfig).replace(/\\/g, "/")
       : null;
     const tailwindPluginConfig = tailwindConfigRel
       ? `{ config: ${JSON.stringify(tailwindConfigRel)} }`
