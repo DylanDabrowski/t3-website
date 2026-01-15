@@ -19,7 +19,7 @@ const REPO_FULL_NAME = process.env.GITHUB_REPOSITORY;
 const COMMIT_SHA = process.env.GITHUB_SHA;
 const UPLOAD_BATCH_SIZE = Number(process.env.PREVIEW_UPLOAD_BATCH_SIZE || "25");
 const PREVIEW_INTERACTIVE = process.env.PREVIEW_INTERACTIVE !== "0";
-const SCRIPT_VERSION = "preview-script-v19";
+const SCRIPT_VERSION = "preview-script-v20";
 
 if (!PREVIEW_UPLOAD_URL || !PREVIEW_UPLOAD_TOKEN) {
   console.error("Missing PREVIEW_UPLOAD_URL or PREVIEW_UPLOAD_TOKEN");
@@ -109,6 +109,10 @@ function toPosixPath(value) {
   return value.replace(/\\/g, "/");
 }
 
+function escapeRegExp(value) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
 function stripJsonComments(content) {
   return content
     .replace(/\/\*[\s\S]*?\*\//g, "")
@@ -180,10 +184,14 @@ function getProjectAliases() {
 
   for (const [key, targets] of Object.entries(paths)) {
     if (!Array.isArray(targets) || targets.length === 0) continue;
+    const hasWildcard = key.endsWith("/*");
     const find = key.replace(/\/\*$/, "");
     const target = String(targets[0]).replace(/\/\*$/, "");
     const replacement = path.resolve(baseUrl, target);
-    aliases.push({ find, replacement });
+    const regexSource = hasWildcard
+      ? `^${escapeRegExp(find)}/`
+      : null;
+    aliases.push({ find, replacement, regexSource, needsTrailingSlash: hasWildcard });
   }
 
   return aliases;
@@ -194,11 +202,14 @@ function normalizeAliasEntries(entries) {
   const unique = [];
   for (const entry of entries) {
     if (!entry?.find || !entry?.replacement) continue;
-    if (seen.has(entry.find)) continue;
-    seen.add(entry.find);
+    const key = `${entry.find}:${entry.regexSource || ""}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
     unique.push({
       find: entry.find,
       replacement: toPosixPath(entry.replacement),
+      regexSource: entry.regexSource || null,
+      needsTrailingSlash: Boolean(entry.needsTrailingSlash),
     });
   }
   return unique;
@@ -971,8 +982,8 @@ export default defineConfig({
   resolve: {
     alias: [
       ...projectAliases.map((alias) => ({
-        find: alias.find,
-        replacement: alias.replacement,
+        find: alias.regexSource ? new RegExp(alias.regexSource) : alias.find,
+        replacement: alias.replacement + (alias.needsTrailingSlash ? "/" : ""),
       })),
       ...projectAliases.some((alias) => alias.find === "@")
         ? []
@@ -1412,8 +1423,8 @@ export default defineConfig({
   resolve: {
     alias: [
       ...projectAliases.map((alias) => ({
-        find: alias.find,
-        replacement: alias.replacement,
+        find: alias.regexSource ? new RegExp(alias.regexSource) : alias.find,
+        replacement: alias.replacement + (alias.needsTrailingSlash ? "/" : ""),
       })),
       ...projectAliases.some((alias) => alias.find === "@")
         ? []
