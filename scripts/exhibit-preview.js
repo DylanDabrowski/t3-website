@@ -19,7 +19,7 @@ const REPO_FULL_NAME = process.env.GITHUB_REPOSITORY;
 const COMMIT_SHA = process.env.GITHUB_SHA;
 const UPLOAD_BATCH_SIZE = Number(process.env.PREVIEW_UPLOAD_BATCH_SIZE || "25");
 const PREVIEW_INTERACTIVE = process.env.PREVIEW_INTERACTIVE !== "0";
-const SCRIPT_VERSION = "preview-script-v23";
+const SCRIPT_VERSION = "preview-script-v24";
 
 if (!PREVIEW_UPLOAD_URL || !PREVIEW_UPLOAD_TOKEN) {
   console.error("Missing PREVIEW_UPLOAD_URL or PREVIEW_UPLOAD_TOKEN");
@@ -72,6 +72,8 @@ const aliasCandidates = [
   { find: "@trpc/next", file: "stubs/trpc-next.ts" },
   { find: "@trpc/client", file: "stubs/trpc-client.ts" },
   { find: "@trpc/server", file: "stubs/trpc-server.ts" },
+  { find: "~/utils/api", file: "stubs/api.ts" },
+  { find: "@/utils/api", file: "stubs/api.ts" },
   { find: "env.mjs", file: "stubs/env.ts" },
 ];
 
@@ -839,6 +841,39 @@ export function initTRPC() {
 export default { TRPCError, initTRPC };
 `,
   );
+
+  fs.writeFileSync(
+    path.join(stubDir, "api.ts"),
+    `const makeProxy = () =>
+  new Proxy(
+    {},
+    {
+      get(_target, prop) {
+        if (
+          prop === "useQuery" ||
+          prop === "useMutation" ||
+          prop === "useInfiniteQuery" ||
+          prop === "useSuspenseQuery" ||
+          prop === "useSubscription"
+        ) {
+          return () => ({
+            data: undefined,
+            error: null,
+            isLoading: false,
+            isFetching: false,
+            mutate: () => undefined,
+            mutateAsync: async () => undefined,
+          });
+        }
+        return makeProxy();
+      },
+    },
+  );
+
+export const api = makeProxy();
+export default { api };
+`,
+  );
 }
 
 function writePreviewApp(components, globalCssPath) {
@@ -1107,6 +1142,29 @@ const repoRoot = path.resolve(__dirname, "..");
 const stubAliases = ${JSON.stringify(aliasCandidates)};
 const projectAliases = ${JSON.stringify(projectAliases)};
 const tailwindMajor = ${JSON.stringify(tailwindMajor)};
+const ENV_STUB_ID = "\\0exhibit-env";
+const TRPC_SSG_STUB_ID = "\\0exhibit-trpc-ssg";
+
+function virtualStubPlugin() {
+  return {
+    name: "exhibit-virtual-stubs",
+    resolveId(id) {
+      if (id === "@trpc/react-query/ssg") return TRPC_SSG_STUB_ID;
+      if (id === "env.mjs") return ENV_STUB_ID;
+      if (id.endsWith("/env.mjs") || id.endsWith("\\\\env.mjs")) return ENV_STUB_ID;
+      return null;
+    },
+    load(id) {
+      if (id === TRPC_SSG_STUB_ID) {
+        return "export function createProxySSGHelpers(){return {}}; export default { createProxySSGHelpers };";
+      }
+      if (id === ENV_STUB_ID) {
+        return "export const env = new Proxy({}, { get: () => 'preview' }); export default { env };";
+      }
+      return null;
+    },
+  };
+}
 
 function parseImportRule(rule) {
   const match =
@@ -1298,11 +1356,15 @@ function cssNormalizePlugin() {
 
 export default defineConfig({
   root: __dirname,
-  plugins: [cssNormalizePlugin(), react()],
+  plugins: [virtualStubPlugin(), cssNormalizePlugin(), react()],
   resolve: {
     alias: [
       { find: /~\\/env\\.mjs$/, replacement: path.resolve(__dirname, "src/stubs/env.ts") },
       { find: /\\/env\\.mjs$/, replacement: path.resolve(__dirname, "src/stubs/env.ts") },
+      ...stubAliases.map((alias) => ({
+        find: alias.find,
+        replacement: path.resolve(__dirname, "src/" + alias.file),
+      })),
       ...projectAliases.map((alias) => ({
         find: alias.regexSource ? new RegExp(alias.regexSource) : alias.find,
         replacement: alias.replacement + (alias.needsTrailingSlash ? "/" : ""),
@@ -1310,10 +1372,6 @@ export default defineConfig({
       ...projectAliases.some((alias) => alias.find === "@")
         ? []
         : [{ find: "@", replacement: path.resolve(repoRoot, "src") }],
-      ...stubAliases.map((alias) => ({
-        find: alias.find,
-        replacement: path.resolve(__dirname, "src/" + alias.file),
-      })),
     ],
   },
   server: {
@@ -1380,6 +1438,10 @@ async function buildInteractiveBundle(components, globalCssPath) {
   const projectAliases = normalizeAliasEntries(getProjectAliases());
   fs.mkdirSync(bundleDir, { recursive: true });
   writePreviewStubs(stubRoot);
+  const bundleEnvPath = path.join(stubRoot, "env.ts");
+  console.log(
+    `Bundle stubs: ${stubRoot} (${fs.existsSync(bundleEnvPath) ? "ready" : "missing"})`,
+  );
 
   const tailwindMajor = getTailwindMajorVersion();
   let bundleCss = "";
@@ -1603,6 +1665,29 @@ const repoRoot = path.resolve(__dirname, "..", "..");
 const stubRoot = path.resolve(__dirname, "stubs");
 const projectAliases = ${JSON.stringify(projectAliases)};
 const tailwindMajor = ${JSON.stringify(tailwindMajor)};
+const ENV_STUB_ID = "\\0exhibit-env";
+const TRPC_SSG_STUB_ID = "\\0exhibit-trpc-ssg";
+
+function virtualStubPlugin() {
+  return {
+    name: "exhibit-virtual-stubs",
+    resolveId(id) {
+      if (id === "@trpc/react-query/ssg") return TRPC_SSG_STUB_ID;
+      if (id === "env.mjs") return ENV_STUB_ID;
+      if (id.endsWith("/env.mjs") || id.endsWith("\\\\env.mjs")) return ENV_STUB_ID;
+      return null;
+    },
+    load(id) {
+      if (id === TRPC_SSG_STUB_ID) {
+        return "export function createProxySSGHelpers(){return {}}; export default { createProxySSGHelpers };";
+      }
+      if (id === ENV_STUB_ID) {
+        return "export const env = new Proxy({}, { get: () => 'preview' }); export default { env };";
+      }
+      return null;
+    },
+  };
+}
 
 function parseImportRule(rule) {
   const match =
@@ -1790,20 +1875,13 @@ function cssNormalizePlugin() {
 
 export default defineConfig({
   root: __dirname,
-  plugins: [cssNormalizePlugin(), react()],
+  plugins: [virtualStubPlugin(), cssNormalizePlugin(), react()],
   css: {
     postcss: path.resolve(repoRoot, ".exhibit-preview", "postcss.config.cjs"),
   },
   resolve: {
     alias: [
       { find: /\\/env\\.mjs$/, replacement: path.resolve(stubRoot, "env.ts") },
-      ...projectAliases.map((alias) => ({
-        find: alias.regexSource ? new RegExp(alias.regexSource) : alias.find,
-        replacement: alias.replacement + (alias.needsTrailingSlash ? "/" : ""),
-      })),
-      ...projectAliases.some((alias) => alias.find === "@")
-        ? []
-        : [{ find: "@", replacement: path.resolve(repoRoot, "src") }],
       { find: "next/link", replacement: path.join(stubRoot, "next-link.tsx") },
       { find: "next/image", replacement: path.join(stubRoot, "next-image.tsx") },
       { find: "next/navigation", replacement: path.join(stubRoot, "next-navigation.ts") },
@@ -1822,6 +1900,15 @@ export default defineConfig({
       { find: "@trpc/server", replacement: path.join(stubRoot, "trpc-server.ts") },
       { find: /~\\/env\\.mjs$/, replacement: path.join(stubRoot, "env.ts") },
       { find: "env.mjs", replacement: path.join(stubRoot, "env.ts") },
+      { find: "~/utils/api", replacement: path.join(stubRoot, "api.ts") },
+      { find: "@/utils/api", replacement: path.join(stubRoot, "api.ts") },
+      ...projectAliases.map((alias) => ({
+        find: alias.regexSource ? new RegExp(alias.regexSource) : alias.find,
+        replacement: alias.replacement + (alias.needsTrailingSlash ? "/" : ""),
+      })),
+      ...projectAliases.some((alias) => alias.find === "@")
+        ? []
+        : [{ find: "@", replacement: path.resolve(repoRoot, "src") }],
     ],
   },
   build: {
