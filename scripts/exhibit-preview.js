@@ -63,6 +63,10 @@ const aliasCandidates = [
   { find: "next/head", file: "stubs/next-head.tsx" },
   { find: ".prisma/client/index-browser", file: "stubs/prisma-client.ts" },
   { find: "@prisma/client", file: "stubs/prisma-client.ts" },
+  { find: "@t3-oss/env-nextjs", file: "stubs/env.ts" },
+  { find: "@t3-oss/env-core", file: "stubs/env.ts" },
+  { find: "@clerk/nextjs", file: "stubs/clerk.tsx" },
+  { find: "@clerk/clerk-react", file: "stubs/clerk.tsx" },
 ];
 
 function walk(dir) {
@@ -706,6 +710,66 @@ export default {};
 `,
   );
 
+  fs.writeFileSync(
+    path.join(stubDir, "env.ts"),
+    `export function createEnv(config: any = {}) {
+  const defaults = config.runtimeEnv || config.client || {};
+  return new Proxy(defaults, {
+    get(target, prop) {
+      if (typeof prop !== "string") return undefined;
+      if (prop in target) return target[prop];
+      if (/URL|URI/i.test(prop)) return "https://example.com";
+      return "preview";
+    },
+  });
+}
+export default { createEnv };
+`,
+  );
+
+  fs.writeFileSync(
+    path.join(stubDir, "clerk.tsx"),
+    `import React from "react";
+export function ClerkProvider({ children }: any) {
+  return <>{children}</>;
+}
+export function SignedIn({ children }: any) {
+  return <>{children}</>;
+}
+export function SignedOut({ children }: any) {
+  return null;
+}
+export function ClerkLoaded({ children }: any) {
+  return <>{children}</>;
+}
+export function ClerkLoading() {
+  return null;
+}
+export function useAuth() {
+  return {
+    isSignedIn: false,
+    userId: null,
+    sessionId: null,
+    getToken: async () => null,
+  };
+}
+export function useUser() {
+  return { isSignedIn: false, user: null };
+}
+export function useClerk() {
+  return {
+    openSignIn: () => {},
+    openUserProfile: () => {},
+    signOut: async () => {},
+  };
+}
+export const SignInButton = ({ children }: any) => <>{children}</>;
+export const SignUpButton = ({ children }: any) => <>{children}</>;
+export const UserButton = () => null;
+export default { ClerkProvider };
+`,
+  );
+
   const tailwindConfig = getTailwindConfigPath();
   const usesTailwind =
     Boolean(tailwindConfig) || globalCssHasTailwind(globalCssPath);
@@ -758,8 +822,31 @@ export default {};
   );
 
   fs.writeFileSync(
+    path.join(srcDir, "preview-env.ts"),
+    `const envProxy = new Proxy(
+  { NODE_ENV: "production" },
+  {
+    get(target, prop) {
+      if (typeof prop !== "string") return undefined;
+      if (prop in target) return target[prop];
+      if (/URL|URI/i.test(prop)) return "https://example.com";
+      return "preview";
+    },
+  },
+);
+const globalProcess = globalThis as unknown as { process?: { env?: any } };
+if (!globalProcess.process) {
+  globalProcess.process = { env: envProxy };
+} else if (!globalProcess.process.env) {
+  globalProcess.process.env = envProxy;
+}
+`,
+  );
+
+  fs.writeFileSync(
     path.join(srcDir, "main.tsx"),
-    `${globalImport}import React from "react";
+    `${globalImport}import "./preview-env";
+import React from "react";
 import { createRoot } from "react-dom/client";
 import App from "./preview-app";
 
@@ -776,6 +863,25 @@ if (root) {
 import { components } from "./components";
 
 type PreviewStatus = "loading" | "ready" | "error";
+
+class PreviewErrorBoundary extends React.Component<
+  { onError: (error: Error) => void; children: React.ReactNode },
+  { hasError: boolean }
+> {
+  state = { hasError: false };
+  static getDerivedStateFromError() {
+    return { hasError: true };
+  }
+  componentDidCatch(error: Error) {
+    this.props.onError(error);
+  }
+  render() {
+    if (this.state.hasError) {
+      return null;
+    }
+    return this.props.children;
+  }
+}
 
 function resolveProps() {
   const params = new URLSearchParams(window.location.search);
@@ -853,7 +959,16 @@ export default function App() {
           Preview error: {error}
         </div>
       )}
-      {status === "ready" && Component ? <Component {...props} /> : null}
+      {status === "ready" && Component ? (
+        <PreviewErrorBoundary
+          onError={(err) => {
+            setStatus("error");
+            setError(err.message || "Render failed");
+          }}
+        >
+          <Component {...props} />
+        </PreviewErrorBoundary>
+      ) : null}
     </div>
   );
 }
@@ -1163,20 +1278,16 @@ async function buildInteractiveBundle(components, globalCssPath) {
   const entries = [];
   components.forEach((rel, index) => {
     const abs = path.join(ROOT, rel);
-    const varName = `Comp${index}`;
-    importLines.push(`import * as ${varName} from ${JSON.stringify(abs)};`);
     entries.push(
       `  { path: ${JSON.stringify(rel)}, name: ${JSON.stringify(
         path.basename(rel, path.extname(rel)),
-      )}, module: ${varName} }`,
+      )}, importer: () => import(${JSON.stringify(abs)}) }`,
     );
   });
 
   fs.writeFileSync(
     path.join(bundleDir, "bundle-components.ts"),
-    `${importLines.join("\n")}\n\nexport const components = [\n${entries.join(
-      ",\n",
-    )}\n];\n`,
+    `export const components = [\n${entries.join(",\n")}\n];\n`,
   );
 
   fs.writeFileSync(
@@ -1185,6 +1296,25 @@ async function buildInteractiveBundle(components, globalCssPath) {
 import { components } from "./bundle-components";
 
 type PreviewStatus = "loading" | "ready" | "error";
+
+class PreviewErrorBoundary extends React.Component<
+  { onError: (error: Error) => void; children: React.ReactNode },
+  { hasError: boolean }
+> {
+  state = { hasError: false };
+  static getDerivedStateFromError() {
+    return { hasError: true };
+  }
+  componentDidCatch(error: Error) {
+    this.props.onError(error);
+  }
+  render() {
+    if (this.state.hasError) {
+      return null;
+    }
+    return this.props.children;
+  }
+}
 
 function resolveTargetPath() {
   const win = window as any;
@@ -1226,20 +1356,22 @@ export default function BundleApp() {
       setError("Component not found");
       return;
     }
-    try {
-      const mod = entry.module;
-      const Exported =
-        mod.default || mod[Object.keys(mod).find((key) => key !== "default") || ""];
-      if (!Exported) {
-        throw new Error("No component export found");
-      }
-      setComponent(() => Exported);
-      setStatus("ready");
-    } catch (err) {
-      const message = err instanceof Error ? err.message : "Render failed";
-      setStatus("error");
-      setError(message);
-    }
+    entry
+      .importer()
+      .then((mod: any) => {
+        const Exported =
+          mod.default ||
+          mod[Object.keys(mod).find((key) => key !== "default") || ""];
+        if (!Exported) {
+          throw new Error("No component export found");
+        }
+        setComponent(() => Exported);
+        setStatus("ready");
+      })
+      .catch((err: Error) => {
+        setStatus("error");
+        setError(err.message);
+      });
   }, [targetPath]);
 
   return (
@@ -1266,7 +1398,16 @@ export default function BundleApp() {
           Preview error: {error}
         </div>
       )}
-      {status === "ready" && Component ? <Component {...props} /> : null}
+      {status === "ready" && Component ? (
+        <PreviewErrorBoundary
+          onError={(err) => {
+            setStatus("error");
+            setError(err.message || "Render failed");
+          }}
+        >
+          <Component {...props} />
+        </PreviewErrorBoundary>
+      ) : null}
     </div>
   );
 }
@@ -1274,8 +1415,31 @@ export default function BundleApp() {
   );
 
   fs.writeFileSync(
+    path.join(bundleDir, "bundle-env.ts"),
+    `const envProxy = new Proxy(
+  { NODE_ENV: "production" },
+  {
+    get(target, prop) {
+      if (typeof prop !== "string") return undefined;
+      if (prop in target) return target[prop];
+      if (/URL|URI/i.test(prop)) return "https://example.com";
+      return "preview";
+    },
+  },
+);
+const globalProcess = globalThis as unknown as { process?: { env?: any } };
+if (!globalProcess.process) {
+  globalProcess.process = { env: envProxy };
+} else if (!globalProcess.process.env) {
+  globalProcess.process.env = envProxy;
+}
+`,
+  );
+
+  fs.writeFileSync(
     path.join(bundleDir, "bundle-main.tsx"),
-    `import React from "react";
+    `import "./bundle-env";
+import React from "react";
 import { createRoot } from "react-dom/client";
 import BundleApp from "./bundle-app";
 import "./bundle-global.css";
@@ -1525,6 +1689,10 @@ export default defineConfig({
       { find: "next/head", replacement: path.join(stubRoot, "next-head.tsx") },
       { find: ".prisma/client/index-browser", replacement: path.join(stubRoot, "prisma-client.ts") },
       { find: "@prisma/client", replacement: path.join(stubRoot, "prisma-client.ts") },
+      { find: "@t3-oss/env-nextjs", replacement: path.join(stubRoot, "env.ts") },
+      { find: "@t3-oss/env-core", replacement: path.join(stubRoot, "env.ts") },
+      { find: "@clerk/nextjs", replacement: path.join(stubRoot, "clerk.tsx") },
+      { find: "@clerk/clerk-react", replacement: path.join(stubRoot, "clerk.tsx") },
     ],
   },
   build: {
