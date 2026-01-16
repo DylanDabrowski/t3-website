@@ -19,7 +19,7 @@ const REPO_FULL_NAME = process.env.GITHUB_REPOSITORY;
 const COMMIT_SHA = process.env.GITHUB_SHA;
 const UPLOAD_BATCH_SIZE = Number(process.env.PREVIEW_UPLOAD_BATCH_SIZE || "25");
 const PREVIEW_INTERACTIVE = process.env.PREVIEW_INTERACTIVE !== "0";
-const SCRIPT_VERSION = "preview-script-v25";
+const SCRIPT_VERSION = "preview-script-v26";
 
 if (!PREVIEW_UPLOAD_URL || !PREVIEW_UPLOAD_TOKEN) {
   console.error("Missing PREVIEW_UPLOAD_URL or PREVIEW_UPLOAD_TOKEN");
@@ -1153,6 +1153,8 @@ function virtualStubPlugin() {
     name: "exhibit-virtual-stubs",
     enforce: "pre",
     resolveId(id) {
+      if (id === "virtual:exhibit-env") return ENV_STUB_ID;
+      if (id === "virtual:exhibit-trpc-ssg") return TRPC_SSG_STUB_ID;
       if (id === "@trpc/react-query/ssg") return TRPC_SSG_STUB_ID;
       if (id === "env.mjs") return ENV_STUB_ID;
       if (id.endsWith("/env.mjs") || id.endsWith("\\\\env.mjs")) return ENV_STUB_ID;
@@ -1363,9 +1365,11 @@ export default defineConfig({
   plugins: [virtualStubPlugin(), cssNormalizePlugin(), react()],
   resolve: {
     alias: [
-      { find: "@trpc/react-query/ssg", replacement: path.resolve(__dirname, "src/stubs/trpc-react-ssg.ts") },
-      { find: /~\\/env\\.mjs$/, replacement: path.resolve(__dirname, "src/stubs/env.ts") },
-      { find: /\\/env\\.mjs$/, replacement: path.resolve(__dirname, "src/stubs/env.ts") },
+      { find: "@trpc/react-query/ssg", replacement: "virtual:exhibit-trpc-ssg" },
+      { find: /~\\/env\\.mjs$/, replacement: "virtual:exhibit-env" },
+      { find: /\\/env\\.mjs$/, replacement: "virtual:exhibit-env" },
+      { find: "env.mjs", replacement: "virtual:exhibit-env" },
+      { find: /utils\\/api$/, replacement: path.resolve(__dirname, "src/stubs/api.ts") },
       ...stubAliases.map((alias) => ({
         find: alias.find,
         replacement: path.resolve(__dirname, "src/" + alias.file),
@@ -1681,6 +1685,8 @@ function virtualStubPlugin() {
     name: "exhibit-virtual-stubs",
     enforce: "pre",
     resolveId(id) {
+      if (id === "virtual:exhibit-env") return ENV_STUB_ID;
+      if (id === "virtual:exhibit-trpc-ssg") return TRPC_SSG_STUB_ID;
       if (id === "@trpc/react-query/ssg") return TRPC_SSG_STUB_ID;
       if (id === "env.mjs") return ENV_STUB_ID;
       if (id.endsWith("/env.mjs") || id.endsWith("\\\\env.mjs")) return ENV_STUB_ID;
@@ -1890,8 +1896,8 @@ export default defineConfig({
   },
   resolve: {
     alias: [
-      { find: /\\/env\\.mjs$/, replacement: path.resolve(stubRoot, "env.ts") },
-      { find: "@trpc/react-query/ssg", replacement: path.resolve(stubRoot, "trpc-react-ssg.ts") },
+      { find: /\\/env\\.mjs$/, replacement: "virtual:exhibit-env" },
+      { find: "@trpc/react-query/ssg", replacement: "virtual:exhibit-trpc-ssg" },
       { find: "next/link", replacement: path.join(stubRoot, "next-link.tsx") },
       { find: "next/image", replacement: path.join(stubRoot, "next-image.tsx") },
       { find: "next/navigation", replacement: path.join(stubRoot, "next-navigation.ts") },
@@ -1908,10 +1914,11 @@ export default defineConfig({
       { find: "@trpc/next", replacement: path.join(stubRoot, "trpc-next.ts") },
       { find: "@trpc/client", replacement: path.join(stubRoot, "trpc-client.ts") },
       { find: "@trpc/server", replacement: path.join(stubRoot, "trpc-server.ts") },
-      { find: /~\\/env\\.mjs$/, replacement: path.join(stubRoot, "env.ts") },
-      { find: "env.mjs", replacement: path.join(stubRoot, "env.ts") },
+      { find: /~\\/env\\.mjs$/, replacement: "virtual:exhibit-env" },
+      { find: "env.mjs", replacement: "virtual:exhibit-env" },
       { find: "~/utils/api", replacement: path.join(stubRoot, "api.ts") },
       { find: "@/utils/api", replacement: path.join(stubRoot, "api.ts") },
+      { find: /utils\\/api$/, replacement: path.join(stubRoot, "api.ts") },
       ...projectAliases.map((alias) => ({
         find: alias.regexSource ? new RegExp(alias.regexSource) : alias.find,
         replacement: alias.replacement + (alias.needsTrailingSlash ? "/" : ""),
