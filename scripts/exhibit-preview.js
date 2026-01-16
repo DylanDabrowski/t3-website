@@ -763,6 +763,9 @@ export function useClerk() {
     signOut: async () => {},
   };
 }
+export const SignIn = ({ children }: any) => <>{children}</>;
+export const SignUp = ({ children }: any) => <>{children}</>;
+export const SignOutButton = ({ children }: any) => <>{children}</>;
 export const SignInButton = ({ children }: any) => <>{children}</>;
 export const SignUpButton = ({ children }: any) => <>{children}</>;
 export const UserButton = () => null;
