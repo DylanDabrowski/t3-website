@@ -19,7 +19,7 @@ const REPO_FULL_NAME = process.env.GITHUB_REPOSITORY;
 const COMMIT_SHA = process.env.GITHUB_SHA;
 const UPLOAD_BATCH_SIZE = Number(process.env.PREVIEW_UPLOAD_BATCH_SIZE || "25");
 const PREVIEW_INTERACTIVE = process.env.PREVIEW_INTERACTIVE !== "0";
-const SCRIPT_VERSION = "preview-script-v24";
+const SCRIPT_VERSION = "preview-script-v25";
 
 if (!PREVIEW_UPLOAD_URL || !PREVIEW_UPLOAD_TOKEN) {
   console.error("Missing PREVIEW_UPLOAD_URL or PREVIEW_UPLOAD_TOKEN");
@@ -849,6 +849,9 @@ export default { TRPCError, initTRPC };
     {},
     {
       get(_target, prop) {
+        if (prop === "withTRPC") {
+          return () => (App: any) => App;
+        }
         if (
           prop === "useQuery" ||
           prop === "useMutation" ||
@@ -1148,6 +1151,7 @@ const TRPC_SSG_STUB_ID = "\\0exhibit-trpc-ssg";
 function virtualStubPlugin() {
   return {
     name: "exhibit-virtual-stubs",
+    enforce: "pre",
     resolveId(id) {
       if (id === "@trpc/react-query/ssg") return TRPC_SSG_STUB_ID;
       if (id === "env.mjs") return ENV_STUB_ID;
@@ -1359,6 +1363,7 @@ export default defineConfig({
   plugins: [virtualStubPlugin(), cssNormalizePlugin(), react()],
   resolve: {
     alias: [
+      { find: "@trpc/react-query/ssg", replacement: path.resolve(__dirname, "src/stubs/trpc-react-ssg.ts") },
       { find: /~\\/env\\.mjs$/, replacement: path.resolve(__dirname, "src/stubs/env.ts") },
       { find: /\\/env\\.mjs$/, replacement: path.resolve(__dirname, "src/stubs/env.ts") },
       ...stubAliases.map((alias) => ({
@@ -1439,6 +1444,9 @@ async function buildInteractiveBundle(components, globalCssPath) {
   fs.mkdirSync(bundleDir, { recursive: true });
   writePreviewStubs(stubRoot);
   const bundleEnvPath = path.join(stubRoot, "env.ts");
+  if (!fs.existsSync(bundleEnvPath)) {
+    writePreviewStubs(stubRoot);
+  }
   console.log(
     `Bundle stubs: ${stubRoot} (${fs.existsSync(bundleEnvPath) ? "ready" : "missing"})`,
   );
@@ -1671,6 +1679,7 @@ const TRPC_SSG_STUB_ID = "\\0exhibit-trpc-ssg";
 function virtualStubPlugin() {
   return {
     name: "exhibit-virtual-stubs",
+    enforce: "pre",
     resolveId(id) {
       if (id === "@trpc/react-query/ssg") return TRPC_SSG_STUB_ID;
       if (id === "env.mjs") return ENV_STUB_ID;
@@ -1882,6 +1891,7 @@ export default defineConfig({
   resolve: {
     alias: [
       { find: /\\/env\\.mjs$/, replacement: path.resolve(stubRoot, "env.ts") },
+      { find: "@trpc/react-query/ssg", replacement: path.resolve(stubRoot, "trpc-react-ssg.ts") },
       { find: "next/link", replacement: path.join(stubRoot, "next-link.tsx") },
       { find: "next/image", replacement: path.join(stubRoot, "next-image.tsx") },
       { find: "next/navigation", replacement: path.join(stubRoot, "next-navigation.ts") },
