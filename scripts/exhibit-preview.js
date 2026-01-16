@@ -67,6 +67,11 @@ const aliasCandidates = [
   { find: "@t3-oss/env-core", file: "stubs/env.ts" },
   { find: "@clerk/nextjs", file: "stubs/clerk.tsx" },
   { find: "@clerk/clerk-react", file: "stubs/clerk.tsx" },
+  { find: "@trpc/react-query", file: "stubs/trpc-react.ts" },
+  { find: "@trpc/next", file: "stubs/trpc-next.ts" },
+  { find: "@trpc/client", file: "stubs/trpc-client.ts" },
+  { find: "@trpc/server", file: "stubs/trpc-server.ts" },
+  { find: "env.mjs", file: "stubs/env.ts" },
 ];
 
 function walk(dir) {
@@ -723,6 +728,7 @@ export default {};
     },
   });
 }
+export const env = createEnv();
 export default { createEnv };
 `,
   );
@@ -770,6 +776,88 @@ export const SignInButton = ({ children }: any) => <>{children}</>;
 export const SignUpButton = ({ children }: any) => <>{children}</>;
 export const UserButton = () => null;
 export default { ClerkProvider };
+`,
+  );
+
+  fs.writeFileSync(
+    path.join(stubDir, "trpc-react.ts"),
+    `import React from "react";
+const noop = () => undefined;
+
+function makeProxy() {
+  return new Proxy(noop, {
+    get(_target, prop) {
+      if (prop === "Provider") {
+        return ({ children }: any) => <>{children}</>;
+      }
+      if (prop === "useContext" || prop === "useUtils") {
+        return () => ({});
+      }
+      if (
+        prop === "useQuery" ||
+        prop === "useMutation" ||
+        prop === "useInfiniteQuery" ||
+        prop === "useSuspenseQuery" ||
+        prop === "useSubscription"
+      ) {
+        return () => ({ data: undefined, error: null, isLoading: false });
+      }
+      if (prop === "createClient" || prop === "createProxySSGHelpers") {
+        return () => ({});
+      }
+      return makeProxy();
+    },
+    apply() {
+      return makeProxy();
+    },
+  });
+}
+
+export function createTRPCReact() {
+  return makeProxy();
+}
+
+export default { createTRPCReact };
+`,
+  );
+
+  fs.writeFileSync(
+    path.join(stubDir, "trpc-next.ts"),
+    `export function withTRPC() {
+  return (App: any) => App;
+}
+
+export function createTRPCNext() {
+  return {
+    withTRPC: () => (App: any) => App,
+  };
+}
+
+export default { withTRPC, createTRPCNext };
+`,
+  );
+
+  fs.writeFileSync(
+    path.join(stubDir, "trpc-client.ts"),
+    `export function createTRPCProxyClient() {
+  return {};
+}
+export function httpBatchLink() {
+  return {};
+}
+export function httpLink() {
+  return {};
+}
+export default {};
+`,
+  );
+
+  fs.writeFileSync(
+    path.join(stubDir, "trpc-server.ts"),
+    `export function initTRPC() {
+  return {};
+}
+export default {};
 `,
   );
 
@@ -1187,6 +1275,7 @@ export default defineConfig({
   plugins: [cssNormalizePlugin(), react()],
   resolve: {
     alias: [
+      { find: /\\/env\\.mjs$/, replacement: path.resolve(__dirname, "src/stubs/env.ts") },
       ...projectAliases.map((alias) => ({
         find: alias.regexSource ? new RegExp(alias.regexSource) : alias.find,
         replacement: alias.replacement + (alias.needsTrailingSlash ? "/" : ""),
@@ -1678,6 +1767,7 @@ export default defineConfig({
   },
   resolve: {
     alias: [
+      { find: /\\/env\\.mjs$/, replacement: path.resolve(stubRoot, "env.ts") },
       ...projectAliases.map((alias) => ({
         find: alias.regexSource ? new RegExp(alias.regexSource) : alias.find,
         replacement: alias.replacement + (alias.needsTrailingSlash ? "/" : ""),
@@ -1696,6 +1786,11 @@ export default defineConfig({
       { find: "@t3-oss/env-core", replacement: path.join(stubRoot, "env.ts") },
       { find: "@clerk/nextjs", replacement: path.join(stubRoot, "clerk.tsx") },
       { find: "@clerk/clerk-react", replacement: path.join(stubRoot, "clerk.tsx") },
+      { find: "@trpc/react-query", replacement: path.join(stubRoot, "trpc-react.ts") },
+      { find: "@trpc/next", replacement: path.join(stubRoot, "trpc-next.ts") },
+      { find: "@trpc/client", replacement: path.join(stubRoot, "trpc-client.ts") },
+      { find: "@trpc/server", replacement: path.join(stubRoot, "trpc-server.ts") },
+      { find: "env.mjs", replacement: path.join(stubRoot, "env.ts") },
     ],
   },
   build: {
@@ -1704,6 +1799,7 @@ export default defineConfig({
     cssCodeSplit: false,
     sourcemap: false,
     minify: "esbuild",
+    assetsInlineLimit: 10000000,
     rollupOptions: {
       input: path.resolve(__dirname, "index.html"),
       output: {
