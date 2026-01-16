@@ -19,7 +19,7 @@ const REPO_FULL_NAME = process.env.GITHUB_REPOSITORY;
 const COMMIT_SHA = process.env.GITHUB_SHA;
 const UPLOAD_BATCH_SIZE = Number(process.env.PREVIEW_UPLOAD_BATCH_SIZE || "25");
 const PREVIEW_INTERACTIVE = process.env.PREVIEW_INTERACTIVE !== "0";
-const SCRIPT_VERSION = "preview-script-v22";
+const SCRIPT_VERSION = "preview-script-v23";
 
 if (!PREVIEW_UPLOAD_URL || !PREVIEW_UPLOAD_TOKEN) {
   console.error("Missing PREVIEW_UPLOAD_URL or PREVIEW_UPLOAD_TOKEN");
@@ -596,50 +596,8 @@ function writeNormalizedGlobalCss(globalCssPath) {
   }
 }
 
-function writePreviewApp(components, globalCssPath) {
-  const srcDir = path.join(PREVIEW_DIR, "src");
-  const stubDir = path.join(srcDir, "stubs");
-  const projectAliases = normalizeAliasEntries(getProjectAliases());
-  if (projectAliases.length > 0) {
-    console.log(
-      `Preview aliases: ${projectAliases
-        .map((alias) => alias.find)
-        .join(", ")}`,
-    );
-  }
-  fs.mkdirSync(srcDir, { recursive: true });
+function writePreviewStubs(stubDir) {
   fs.mkdirSync(stubDir, { recursive: true });
-
-  if (globalCssPath) {
-    console.log(`Preview global CSS: ${globalCssPath}`);
-  }
-
-  const componentEntries = components
-    .map((rel) => {
-      const abs = path.join(ROOT, rel);
-      const name = path.basename(rel, path.extname(rel));
-      return `  {\n    path: ${JSON.stringify(rel)},\n    name: ${JSON.stringify(name)},\n    importer: () => import(${JSON.stringify(toFsImportPath(abs))})\n  }`;
-    })
-    .join(",\n");
-
-  const normalizedGlobalCss = writeNormalizedGlobalCss(globalCssPath);
-  const globalImport = normalizedGlobalCss
-    ? `import ${JSON.stringify(normalizedGlobalCss)};\n`
-    : globalCssPath
-      ? `import ${JSON.stringify(toFsImportPath(globalCssPath))};\n`
-      : "";
-
-  if (normalizedGlobalCss) {
-    try {
-      const previewCssPath = path.join(PREVIEW_DIR, "src", "preview-global.css");
-      const previewCss = fs.readFileSync(previewCssPath, "utf8");
-      const head = previewCss.split("\n").slice(0, 6).join("\n");
-      console.log("Preview global CSS head:");
-      console.log(head);
-    } catch {
-      // ignore
-    }
-  }
 
   fs.writeFileSync(
     path.join(stubDir, "next-link.tsx"),
@@ -885,6 +843,53 @@ export function initTRPC() {
 export default { TRPCError, initTRPC };
 `,
   );
+}
+
+function writePreviewApp(components, globalCssPath) {
+  const srcDir = path.join(PREVIEW_DIR, "src");
+  const stubDir = path.join(srcDir, "stubs");
+  const projectAliases = normalizeAliasEntries(getProjectAliases());
+  if (projectAliases.length > 0) {
+    console.log(
+      `Preview aliases: ${projectAliases
+        .map((alias) => alias.find)
+        .join(", ")}`,
+    );
+  }
+  fs.mkdirSync(srcDir, { recursive: true });
+  writePreviewStubs(stubDir);
+
+  if (globalCssPath) {
+    console.log(`Preview global CSS: ${globalCssPath}`);
+  }
+
+  const componentEntries = components
+    .map((rel) => {
+      const abs = path.join(ROOT, rel);
+      const name = path.basename(rel, path.extname(rel));
+      return `  {\n    path: ${JSON.stringify(rel)},\n    name: ${JSON.stringify(name)},\n    importer: () => import(${JSON.stringify(toFsImportPath(abs))})\n  }`;
+    })
+    .join(",\n");
+
+  const normalizedGlobalCss = writeNormalizedGlobalCss(globalCssPath);
+  const globalImport = normalizedGlobalCss
+    ? `import ${JSON.stringify(normalizedGlobalCss)};\n`
+    : globalCssPath
+      ? `import ${JSON.stringify(toFsImportPath(globalCssPath))};\n`
+      : "";
+
+  if (normalizedGlobalCss) {
+    try {
+      const previewCssPath = path.join(PREVIEW_DIR, "src", "preview-global.css");
+      const previewCss = fs.readFileSync(previewCssPath, "utf8");
+      const head = previewCss.split("\n").slice(0, 6).join("\n");
+      console.log("Preview global CSS head:");
+      console.log(head);
+    } catch {
+      // ignore
+    }
+  }
+
 
   const tailwindConfig = getTailwindConfigPath();
   const usesTailwind =
@@ -1378,28 +1383,7 @@ async function buildInteractiveBundle(components, globalCssPath) {
   const stubRoot = path.join(PREVIEW_DIR, "src", "stubs");
   const projectAliases = normalizeAliasEntries(getProjectAliases());
   fs.mkdirSync(bundleDir, { recursive: true });
-  fs.mkdirSync(stubRoot, { recursive: true });
-
-  const envStubPath = path.join(stubRoot, "env.ts");
-  if (!fs.existsSync(envStubPath)) {
-    fs.writeFileSync(
-      envStubPath,
-      `export function createEnv(config: any = {}) {
-  const defaults = config.runtimeEnv || config.client || {};
-  return new Proxy(defaults, {
-    get(target, prop) {
-      if (typeof prop !== "string") return undefined;
-      if (prop in target) return target[prop];
-      if (/URL|URI/i.test(prop)) return "https://example.com";
-      return "preview";
-    },
-  });
-}
-export const env = createEnv();
-export default { createEnv };
-`,
-    );
-  }
+  writePreviewStubs(stubRoot);
 
   const tailwindMajor = getTailwindMajorVersion();
   let bundleCss = "";
