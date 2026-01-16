@@ -1148,7 +1148,6 @@ const tailwindMajor = ${JSON.stringify(tailwindMajor)};
 const ENV_STUB_ID = "\\0exhibit-env";
 const TRPC_SSG_STUB_ID = "\\0exhibit-trpc-ssg";
 const API_STUB_ID = "\\0exhibit-api";
-const API_STUB_ID = "\\0exhibit-api";
 
 function virtualStubPlugin() {
   return {
