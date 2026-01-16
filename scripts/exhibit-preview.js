@@ -68,6 +68,7 @@ const aliasCandidates = [
   { find: "@clerk/nextjs", file: "stubs/clerk.tsx" },
   { find: "@clerk/clerk-react", file: "stubs/clerk.tsx" },
   { find: "@trpc/react-query", file: "stubs/trpc-react.ts" },
+  { find: "@trpc/react-query/ssg", file: "stubs/trpc-react-ssg.ts" },
   { find: "@trpc/next", file: "stubs/trpc-next.ts" },
   { find: "@trpc/client", file: "stubs/trpc-client.ts" },
   { find: "@trpc/server", file: "stubs/trpc-server.ts" },
@@ -822,6 +823,15 @@ export default { createTRPCReact };
   );
 
   fs.writeFileSync(
+    path.join(stubDir, "trpc-react-ssg.ts"),
+    `export function createProxySSGHelpers() {
+  return {};
+}
+export default { createProxySSGHelpers };
+`,
+  );
+
+  fs.writeFileSync(
     path.join(stubDir, "trpc-next.ts"),
     `export function withTRPC() {
   return (App: any) => App;
@@ -845,6 +855,9 @@ export default { withTRPC, createTRPCNext };
 export function httpBatchLink() {
   return {};
 }
+export function loggerLink() {
+  return {};
+}
 export function httpLink() {
   return {};
 }
@@ -854,10 +867,15 @@ export default {};
 
   fs.writeFileSync(
     path.join(stubDir, "trpc-server.ts"),
-    `export function initTRPC() {
+    `export class TRPCError extends Error {
+  constructor(opts: { message?: string } = {}) {
+    super(opts.message || "TRPC error");
+  }
+}
+export function initTRPC() {
   return {};
 }
-export default {};
+export default { TRPCError, initTRPC };
 `,
   );
 
@@ -1275,6 +1293,7 @@ export default defineConfig({
   plugins: [cssNormalizePlugin(), react()],
   resolve: {
     alias: [
+      { find: /~\\/env\\.mjs$/, replacement: path.resolve(__dirname, "src/stubs/env.ts") },
       { find: /\\/env\\.mjs$/, replacement: path.resolve(__dirname, "src/stubs/env.ts") },
       ...projectAliases.map((alias) => ({
         find: alias.regexSource ? new RegExp(alias.regexSource) : alias.find,
@@ -1787,9 +1806,11 @@ export default defineConfig({
       { find: "@clerk/nextjs", replacement: path.join(stubRoot, "clerk.tsx") },
       { find: "@clerk/clerk-react", replacement: path.join(stubRoot, "clerk.tsx") },
       { find: "@trpc/react-query", replacement: path.join(stubRoot, "trpc-react.ts") },
+      { find: "@trpc/react-query/ssg", replacement: path.join(stubRoot, "trpc-react-ssg.ts") },
       { find: "@trpc/next", replacement: path.join(stubRoot, "trpc-next.ts") },
       { find: "@trpc/client", replacement: path.join(stubRoot, "trpc-client.ts") },
       { find: "@trpc/server", replacement: path.join(stubRoot, "trpc-server.ts") },
+      { find: /~\\/env\\.mjs$/, replacement: path.join(stubRoot, "env.ts") },
       { find: "env.mjs", replacement: path.join(stubRoot, "env.ts") },
     ],
   },
