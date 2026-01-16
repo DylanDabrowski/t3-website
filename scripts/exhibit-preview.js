@@ -19,7 +19,7 @@ const REPO_FULL_NAME = process.env.GITHUB_REPOSITORY;
 const COMMIT_SHA = process.env.GITHUB_SHA;
 const UPLOAD_BATCH_SIZE = Number(process.env.PREVIEW_UPLOAD_BATCH_SIZE || "25");
 const PREVIEW_INTERACTIVE = process.env.PREVIEW_INTERACTIVE !== "0";
-const SCRIPT_VERSION = "preview-script-v26";
+const SCRIPT_VERSION = "preview-script-v27";
 
 if (!PREVIEW_UPLOAD_URL || !PREVIEW_UPLOAD_TOKEN) {
   console.error("Missing PREVIEW_UPLOAD_URL or PREVIEW_UPLOAD_TOKEN");
@@ -1147,6 +1147,8 @@ const projectAliases = ${JSON.stringify(projectAliases)};
 const tailwindMajor = ${JSON.stringify(tailwindMajor)};
 const ENV_STUB_ID = "\\0exhibit-env";
 const TRPC_SSG_STUB_ID = "\\0exhibit-trpc-ssg";
+const API_STUB_ID = "\\0exhibit-api";
+const API_STUB_ID = "\\0exhibit-api";
 
 function virtualStubPlugin() {
   return {
@@ -1155,9 +1157,18 @@ function virtualStubPlugin() {
     resolveId(id) {
       if (id === "virtual:exhibit-env") return ENV_STUB_ID;
       if (id === "virtual:exhibit-trpc-ssg") return TRPC_SSG_STUB_ID;
+      if (id === "virtual:exhibit-api") return API_STUB_ID;
       if (id === "@trpc/react-query/ssg") return TRPC_SSG_STUB_ID;
       if (id === "env.mjs") return ENV_STUB_ID;
       if (id.endsWith("/env.mjs") || id.endsWith("\\\\env.mjs")) return ENV_STUB_ID;
+      if (
+        id.endsWith("/utils/api") ||
+        id.endsWith("\\\\utils\\\\api") ||
+        id.endsWith("/utils/api.ts") ||
+        id.endsWith("\\\\utils\\\\api.ts")
+      ) {
+        return API_STUB_ID;
+      }
       return null;
     },
     load(id) {
@@ -1166,6 +1177,39 @@ function virtualStubPlugin() {
       }
       if (id === ENV_STUB_ID) {
         return "export const env = new Proxy({}, { get: () => 'preview' }); export default { env };";
+      }
+      if (id === API_STUB_ID) {
+        return `const makeProxy = () =>
+  new Proxy(
+    {},
+    {
+      get(_target, prop) {
+        if (prop === "withTRPC") {
+          return () => (App) => App;
+        }
+        if (
+          prop === "useQuery" ||
+          prop === "useMutation" ||
+          prop === "useInfiniteQuery" ||
+          prop === "useSuspenseQuery" ||
+          prop === "useSubscription"
+        ) {
+          return () => ({
+            data: undefined,
+            error: null,
+            isLoading: false,
+            isFetching: false,
+            mutate: () => undefined,
+            mutateAsync: async () => undefined,
+          });
+        }
+        return makeProxy();
+      },
+    },
+  );
+export const api = makeProxy();
+export default { api };
+`;
       }
       return null;
     },
@@ -1369,7 +1413,7 @@ export default defineConfig({
       { find: /~\\/env\\.mjs$/, replacement: "virtual:exhibit-env" },
       { find: /\\/env\\.mjs$/, replacement: "virtual:exhibit-env" },
       { find: "env.mjs", replacement: "virtual:exhibit-env" },
-      { find: /utils\\/api$/, replacement: path.resolve(__dirname, "src/stubs/api.ts") },
+      { find: /utils\\/api$/, replacement: "virtual:exhibit-api" },
       ...stubAliases.map((alias) => ({
         find: alias.find,
         replacement: path.resolve(__dirname, "src/" + alias.file),
@@ -1687,9 +1731,18 @@ function virtualStubPlugin() {
     resolveId(id) {
       if (id === "virtual:exhibit-env") return ENV_STUB_ID;
       if (id === "virtual:exhibit-trpc-ssg") return TRPC_SSG_STUB_ID;
+      if (id === "virtual:exhibit-api") return API_STUB_ID;
       if (id === "@trpc/react-query/ssg") return TRPC_SSG_STUB_ID;
       if (id === "env.mjs") return ENV_STUB_ID;
       if (id.endsWith("/env.mjs") || id.endsWith("\\\\env.mjs")) return ENV_STUB_ID;
+      if (
+        id.endsWith("/utils/api") ||
+        id.endsWith("\\\\utils\\\\api") ||
+        id.endsWith("/utils/api.ts") ||
+        id.endsWith("\\\\utils\\\\api.ts")
+      ) {
+        return API_STUB_ID;
+      }
       return null;
     },
     load(id) {
@@ -1698,6 +1751,39 @@ function virtualStubPlugin() {
       }
       if (id === ENV_STUB_ID) {
         return "export const env = new Proxy({}, { get: () => 'preview' }); export default { env };";
+      }
+      if (id === API_STUB_ID) {
+        return `const makeProxy = () =>
+  new Proxy(
+    {},
+    {
+      get(_target, prop) {
+        if (prop === "withTRPC") {
+          return () => (App) => App;
+        }
+        if (
+          prop === "useQuery" ||
+          prop === "useMutation" ||
+          prop === "useInfiniteQuery" ||
+          prop === "useSuspenseQuery" ||
+          prop === "useSubscription"
+        ) {
+          return () => ({
+            data: undefined,
+            error: null,
+            isLoading: false,
+            isFetching: false,
+            mutate: () => undefined,
+            mutateAsync: async () => undefined,
+          });
+        }
+        return makeProxy();
+      },
+    },
+  );
+export const api = makeProxy();
+export default { api };
+`;
       }
       return null;
     },
@@ -1918,7 +2004,7 @@ export default defineConfig({
       { find: "env.mjs", replacement: "virtual:exhibit-env" },
       { find: "~/utils/api", replacement: path.join(stubRoot, "api.ts") },
       { find: "@/utils/api", replacement: path.join(stubRoot, "api.ts") },
-      { find: /utils\\/api$/, replacement: path.join(stubRoot, "api.ts") },
+      { find: /utils\\/api$/, replacement: "virtual:exhibit-api" },
       ...projectAliases.map((alias) => ({
         find: alias.regexSource ? new RegExp(alias.regexSource) : alias.find,
         replacement: alias.replacement + (alias.needsTrailingSlash ? "/" : ""),
