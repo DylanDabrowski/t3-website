@@ -741,10 +741,9 @@ export default { ClerkProvider };
   fs.writeFileSync(
     path.join(stubDir, "trpc-react.ts"),
     `import React from "react";
-const noop = () => undefined;
 
 function makeProxy() {
-  return new Proxy(noop, {
+  return new Proxy({}, {
     get(_target, prop) {
       if (prop === "Provider") {
         return ({ children }: any) => <>{children}</>;
@@ -771,9 +770,6 @@ function makeProxy() {
       if (prop === "createClient" || prop === "createProxySSGHelpers") {
         return () => ({});
       }
-      return makeProxy();
-    },
-    apply() {
       return makeProxy();
     },
   });
@@ -1380,7 +1376,7 @@ async function buildInteractiveBundle(components, globalCssPath) {
   const bundleDir = path.join(PREVIEW_DIR, "bundle");
   const distDir = path.join(bundleDir, "dist");
   const assetsDir = path.join(distDir, "assets");
-  const stubRoot = path.join(PREVIEW_DIR, "src", "stubs");
+  const stubRoot = path.join(bundleDir, "stubs");
   const projectAliases = normalizeAliasEntries(getProjectAliases());
   fs.mkdirSync(bundleDir, { recursive: true });
   writePreviewStubs(stubRoot);
@@ -1604,7 +1600,7 @@ import { fileURLToPath } from "url";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const repoRoot = path.resolve(__dirname, "..", "..");
-const stubRoot = path.resolve(repoRoot, ".exhibit-preview", "src", "stubs");
+const stubRoot = path.resolve(__dirname, "stubs");
 const projectAliases = ${JSON.stringify(projectAliases)};
 const tailwindMajor = ${JSON.stringify(tailwindMajor)};
 
