@@ -54,6 +54,8 @@ jobs:
       - name: Install dependencies
         shell: bash
         run: |
+          npm ci || npm install
+          npm install --no-save --legacy-peer-deps vite@5.4.5 @vitejs/plugin-react@4.3.1 tailwindcss @tailwindcss/postcss postcss autoprefixer playwright
           set +e
           PM="${{ steps.detect_pm.outputs.pm }}"
           INSTALL_CMD="${{ steps.detect_pm.outputs.install }}"

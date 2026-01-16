@@ -801,7 +801,14 @@ function makeProxy() {
         prop === "useSuspenseQuery" ||
         prop === "useSubscription"
       ) {
-        return () => ({ data: undefined, error: null, isLoading: false });
+        return () => ({
+          data: undefined,
+          error: null,
+          isLoading: false,
+          isFetching: false,
+          mutate: () => undefined,
+          mutateAsync: async () => undefined,
+        });
       }
       if (prop === "createClient" || prop === "createProxySSGHelpers") {
         return () => ({});
@@ -1368,8 +1375,31 @@ async function buildInteractiveBundle(components, globalCssPath) {
   const bundleDir = path.join(PREVIEW_DIR, "bundle");
   const distDir = path.join(bundleDir, "dist");
   const assetsDir = path.join(distDir, "assets");
+  const stubRoot = path.join(PREVIEW_DIR, "src", "stubs");
   const projectAliases = normalizeAliasEntries(getProjectAliases());
   fs.mkdirSync(bundleDir, { recursive: true });
+  fs.mkdirSync(stubRoot, { recursive: true });
+
+  const envStubPath = path.join(stubRoot, "env.ts");
+  if (!fs.existsSync(envStubPath)) {
+    fs.writeFileSync(
+      envStubPath,
+      `export function createEnv(config: any = {}) {
+  const defaults = config.runtimeEnv || config.client || {};
+  return new Proxy(defaults, {
+    get(target, prop) {
+      if (typeof prop !== "string") return undefined;
+      if (prop in target) return target[prop];
+      if (/URL|URI/i.test(prop)) return "https://example.com";
+      return "preview";
+    },
+  });
+}
+export const env = createEnv();
+export default { createEnv };
+`,
+    );
+  }
 
   const tailwindMajor = getTailwindMajorVersion();
   let bundleCss = "";
