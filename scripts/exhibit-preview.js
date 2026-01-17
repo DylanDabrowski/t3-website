@@ -23,7 +23,7 @@ const PREVIEW_INTERACTIVE = process.env.PREVIEW_INTERACTIVE !== "0";
 const PREVIEW_BUNDLE_GZIP_THRESHOLD = Number(
   process.env.PREVIEW_BUNDLE_GZIP_THRESHOLD || "0",
 );
-const SCRIPT_VERSION = "preview-script-v34";
+const SCRIPT_VERSION = "preview-script-v35";
 
 if (!PREVIEW_UPLOAD_URL || !PREVIEW_UPLOAD_TOKEN) {
   console.error("Missing PREVIEW_UPLOAD_URL or PREVIEW_UPLOAD_TOKEN");
@@ -299,7 +299,9 @@ function writeTailwindPreviewConfig(configPath) {
     path.join(ROOT, "pages/**/*.{js,ts,jsx,tsx,mdx}"),
     path.join(ROOT, "components/**/*.{js,ts,jsx,tsx,mdx}"),
   ].map(toPosixPath);
-  const configSource = `let userConfig = {};
+  const configSource = `const path = require("path");
+const repoRoot = ${JSON.stringify(toPosixPath(ROOT))};
+let userConfig = {};
 ${
   transpiled
     ? `try {
@@ -310,7 +312,23 @@ ${
     : ""
 }
 const defaultContent = ${JSON.stringify(defaultContent, null, 2)};
-const content = userConfig?.content || userConfig?.purge || defaultContent;
+function normalizePattern(pattern) {
+  if (typeof pattern !== "string") return pattern;
+  const negated = pattern.startsWith("!");
+  const raw = negated ? pattern.slice(1) : pattern;
+  const abs = path.isAbsolute(raw) ? raw : path.join(repoRoot, raw);
+  const normalized = abs.replace(/\\\\/g, "/");
+  return (negated ? "!" : "") + normalized;
+}
+function resolveContent(raw) {
+  if (!raw) return defaultContent;
+  if (Array.isArray(raw)) return raw.map(normalizePattern);
+  if (raw && typeof raw === "object" && Array.isArray(raw.files)) {
+    return { ...raw, files: raw.files.map(normalizePattern) };
+  }
+  return defaultContent;
+}
+const content = resolveContent(userConfig?.content || userConfig?.purge);
 module.exports = { ...userConfig, content };
 `;
   fs.writeFileSync(previewConfigPath, configSource);
