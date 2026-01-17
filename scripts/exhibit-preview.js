@@ -19,7 +19,7 @@ const REPO_FULL_NAME = process.env.GITHUB_REPOSITORY;
 const COMMIT_SHA = process.env.GITHUB_SHA;
 const UPLOAD_BATCH_SIZE = Number(process.env.PREVIEW_UPLOAD_BATCH_SIZE || "25");
 const PREVIEW_INTERACTIVE = process.env.PREVIEW_INTERACTIVE !== "0";
-const SCRIPT_VERSION = "preview-script-v27";
+const SCRIPT_VERSION = "preview-script-v28";
 
 if (!PREVIEW_UPLOAD_URL || !PREVIEW_UPLOAD_TOKEN) {
   console.error("Missing PREVIEW_UPLOAD_URL or PREVIEW_UPLOAD_TOKEN");
@@ -1178,37 +1178,38 @@ function virtualStubPlugin() {
         return "export const env = new Proxy({}, { get: () => 'preview' }); export default { env };";
       }
       if (id === API_STUB_ID) {
-        return `const makeProxy = () =>
-  new Proxy(
-    {},
-    {
-      get(_target, prop) {
-        if (prop === "withTRPC") {
-          return () => (App) => App;
-        }
-        if (
-          prop === "useQuery" ||
-          prop === "useMutation" ||
-          prop === "useInfiniteQuery" ||
-          prop === "useSuspenseQuery" ||
-          prop === "useSubscription"
-        ) {
-          return () => ({
-            data: undefined,
-            error: null,
-            isLoading: false,
-            isFetching: false,
-            mutate: () => undefined,
-            mutateAsync: async () => undefined,
-          });
-        }
-        return makeProxy();
-      },
-    },
-  );
-export const api = makeProxy();
-export default { api };
-`;
+        return [
+          "const makeProxy = () =>",
+          "  new Proxy(",
+          "    {},",
+          "    {",
+          "      get(_target, prop) {",
+          "        if (prop === \\"withTRPC\\") {",
+          "          return () => (App) => App;",
+          "        }",
+          "        if (",
+          "          prop === \\"useQuery\\" ||",
+          "          prop === \\"useMutation\\" ||",
+          "          prop === \\"useInfiniteQuery\\" ||",
+          "          prop === \\"useSuspenseQuery\\" ||",
+          "          prop === \\"useSubscription\\"",
+          "        ) {",
+          "          return () => ({",
+          "            data: undefined,",
+          "            error: null,",
+          "            isLoading: false,",
+          "            isFetching: false,",
+          "            mutate: () => undefined,",
+          "            mutateAsync: async () => undefined,",
+          "          });",
+          "        }",
+          "        return makeProxy();",
+          "      },",
+          "    },",
+          "  );",
+          "export const api = makeProxy();",
+          "export default { api };",
+        ].join("\\n");
       }
       return null;
     },
@@ -1752,37 +1753,38 @@ function virtualStubPlugin() {
         return "export const env = new Proxy({}, { get: () => 'preview' }); export default { env };";
       }
       if (id === API_STUB_ID) {
-        return `const makeProxy = () =>
-  new Proxy(
-    {},
-    {
-      get(_target, prop) {
-        if (prop === "withTRPC") {
-          return () => (App) => App;
-        }
-        if (
-          prop === "useQuery" ||
-          prop === "useMutation" ||
-          prop === "useInfiniteQuery" ||
-          prop === "useSuspenseQuery" ||
-          prop === "useSubscription"
-        ) {
-          return () => ({
-            data: undefined,
-            error: null,
-            isLoading: false,
-            isFetching: false,
-            mutate: () => undefined,
-            mutateAsync: async () => undefined,
-          });
-        }
-        return makeProxy();
-      },
-    },
-  );
-export const api = makeProxy();
-export default { api };
-`;
+        return [
+          "const makeProxy = () =>",
+          "  new Proxy(",
+          "    {},",
+          "    {",
+          "      get(_target, prop) {",
+          "        if (prop === \\"withTRPC\\") {",
+          "          return () => (App) => App;",
+          "        }",
+          "        if (",
+          "          prop === \\"useQuery\\" ||",
+          "          prop === \\"useMutation\\" ||",
+          "          prop === \\"useInfiniteQuery\\" ||",
+          "          prop === \\"useSuspenseQuery\\" ||",
+          "          prop === \\"useSubscription\\"",
+          "        ) {",
+          "          return () => ({",
+          "            data: undefined,",
+          "            error: null,",
+          "            isLoading: false,",
+          "            isFetching: false,",
+          "            mutate: () => undefined,",
+          "            mutateAsync: async () => undefined,",
+          "          });",
+          "        }",
+          "        return makeProxy();",
+          "      },",
+          "    },",
+          "  );",
+          "export const api = makeProxy();",
+          "export default { api };",
+        ].join("\\n");
       }
       return null;
     },
