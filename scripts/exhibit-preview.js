@@ -5,6 +5,7 @@ import { spawn } from "child_process";
 import { fileURLToPath } from "url";
 import { createRequire } from "module";
 import { chromium } from "playwright";
+import zlib from "zlib";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -19,7 +20,10 @@ const REPO_FULL_NAME = process.env.GITHUB_REPOSITORY;
 const COMMIT_SHA = process.env.GITHUB_SHA;
 const UPLOAD_BATCH_SIZE = Number(process.env.PREVIEW_UPLOAD_BATCH_SIZE || "25");
 const PREVIEW_INTERACTIVE = process.env.PREVIEW_INTERACTIVE !== "0";
-const SCRIPT_VERSION = "preview-script-v33";
+const PREVIEW_BUNDLE_GZIP_THRESHOLD = Number(
+  process.env.PREVIEW_BUNDLE_GZIP_THRESHOLD || "0",
+);
+const SCRIPT_VERSION = "preview-script-v34";
 
 if (!PREVIEW_UPLOAD_URL || !PREVIEW_UPLOAD_TOKEN) {
   console.error("Missing PREVIEW_UPLOAD_URL or PREVIEW_UPLOAD_TOKEN");
@@ -576,6 +580,15 @@ function normalizeCssForVite(cssContent, baseDir, cache, tailwindMajor) {
   }
 
   return `${parts.join("\n\n")}\n`;
+}
+
+function encodeBundlePayload(value) {
+  if (!value) return value;
+  if (PREVIEW_BUNDLE_GZIP_THRESHOLD > 0 && value.length < PREVIEW_BUNDLE_GZIP_THRESHOLD) {
+    return value;
+  }
+  const gz = zlib.gzipSync(Buffer.from(value, "utf8"), { level: 9 });
+  return `gz:${gz.toString("base64")}`;
 }
 
 function writeNormalizedGlobalCss(globalCssPath) {
@@ -1158,9 +1171,9 @@ function virtualStubPlugin() {
       if (id === "virtual:exhibit-env") return ENV_STUB_ID;
       if (id === "virtual:exhibit-trpc-ssg") return TRPC_SSG_STUB_ID;
       if (id === "virtual:exhibit-api") return API_STUB_ID;
-      if (normalized.endsWith("virtual:exhibit-env")) return ENV_STUB_ID;
-      if (normalized.endsWith("virtual:exhibit-trpc-ssg")) return TRPC_SSG_STUB_ID;
-      if (normalized.endsWith("virtual:exhibit-api")) return API_STUB_ID;
+      if (normalized.includes("virtual:exhibit-env")) return ENV_STUB_ID;
+      if (normalized.includes("virtual:exhibit-trpc-ssg")) return TRPC_SSG_STUB_ID;
+      if (normalized.includes("virtual:exhibit-api")) return API_STUB_ID;
       if (id === "@trpc/react-query/ssg") return TRPC_SSG_STUB_ID;
       if (id === "env.mjs") return ENV_STUB_ID;
       if (normalized.endsWith("/env.mjs")) return ENV_STUB_ID;
@@ -1741,9 +1754,9 @@ function virtualStubPlugin() {
       if (id === "virtual:exhibit-env") return ENV_STUB_ID;
       if (id === "virtual:exhibit-trpc-ssg") return TRPC_SSG_STUB_ID;
       if (id === "virtual:exhibit-api") return API_STUB_ID;
-      if (normalized.endsWith("virtual:exhibit-env")) return ENV_STUB_ID;
-      if (normalized.endsWith("virtual:exhibit-trpc-ssg")) return TRPC_SSG_STUB_ID;
-      if (normalized.endsWith("virtual:exhibit-api")) return API_STUB_ID;
+      if (normalized.includes("virtual:exhibit-env")) return ENV_STUB_ID;
+      if (normalized.includes("virtual:exhibit-trpc-ssg")) return TRPC_SSG_STUB_ID;
+      if (normalized.includes("virtual:exhibit-api")) return API_STUB_ID;
       if (id === "@trpc/react-query/ssg") return TRPC_SSG_STUB_ID;
       if (id === "env.mjs") return ENV_STUB_ID;
       if (normalized.endsWith("/env.mjs")) return ENV_STUB_ID;
@@ -2071,10 +2084,12 @@ export default defineConfig({
 
   if (!js) return null;
 
+  const encodedJs = encodeBundlePayload(js);
+  const encodedCss = encodeBundlePayload(css);
   console.log(
     `Interactive bundle ready (js ${js.length} chars, css ${css.length} chars).`,
   );
-  return { js, css };
+  return { js: encodedJs, css: encodedCss };
 }
 
 function buildInteractiveHtml(bundle, componentPath) {
