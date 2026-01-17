@@ -19,7 +19,7 @@ const REPO_FULL_NAME = process.env.GITHUB_REPOSITORY;
 const COMMIT_SHA = process.env.GITHUB_SHA;
 const UPLOAD_BATCH_SIZE = Number(process.env.PREVIEW_UPLOAD_BATCH_SIZE || "25");
 const PREVIEW_INTERACTIVE = process.env.PREVIEW_INTERACTIVE !== "0";
-const SCRIPT_VERSION = "preview-script-v29";
+const SCRIPT_VERSION = "preview-script-v30";
 
 if (!PREVIEW_UPLOAD_URL || !PREVIEW_UPLOAD_TOKEN) {
   console.error("Missing PREVIEW_UPLOAD_URL or PREVIEW_UPLOAD_TOKEN");
@@ -1147,7 +1147,6 @@ const projectAliases = ${JSON.stringify(projectAliases)};
 const tailwindMajor = ${JSON.stringify(tailwindMajor)};
 const ENV_STUB_ID = "\\0exhibit-env";
 const TRPC_SSG_STUB_ID = "\\0exhibit-trpc-ssg";
-const API_STUB_ID = "\\0exhibit-api";
 const API_STUB_ID = "\\0exhibit-api";
 const API_STUB_ID = "\\0exhibit-api";
 
