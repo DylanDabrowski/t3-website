@@ -19,7 +19,7 @@ const REPO_FULL_NAME = process.env.GITHUB_REPOSITORY;
 const COMMIT_SHA = process.env.GITHUB_SHA;
 const UPLOAD_BATCH_SIZE = Number(process.env.PREVIEW_UPLOAD_BATCH_SIZE || "25");
 const PREVIEW_INTERACTIVE = process.env.PREVIEW_INTERACTIVE !== "0";
-const SCRIPT_VERSION = "preview-script-v32";
+const SCRIPT_VERSION = "preview-script-v33";
 
 if (!PREVIEW_UPLOAD_URL || !PREVIEW_UPLOAD_TOKEN) {
   console.error("Missing PREVIEW_UPLOAD_URL or PREVIEW_UPLOAD_TOKEN");
@@ -1158,6 +1158,8 @@ function virtualStubPlugin() {
       if (id === "virtual:exhibit-env") return ENV_STUB_ID;
       if (id === "virtual:exhibit-trpc-ssg") return TRPC_SSG_STUB_ID;
       if (id === "virtual:exhibit-api") return API_STUB_ID;
+      if (normalized.endsWith("virtual:exhibit-env")) return ENV_STUB_ID;
+      if (normalized.endsWith("virtual:exhibit-trpc-ssg")) return TRPC_SSG_STUB_ID;
       if (normalized.endsWith("virtual:exhibit-api")) return API_STUB_ID;
       if (id === "@trpc/react-query/ssg") return TRPC_SSG_STUB_ID;
       if (id === "env.mjs") return ENV_STUB_ID;
@@ -1187,7 +1189,10 @@ function virtualStubPlugin() {
           "    {",
           "      get(_target, prop) {",
           "        if (prop === \\"withTRPC\\") {",
-          "          return () => (App) => App;",
+          "          return (App) => App;",
+          "        }",
+          "        if (prop === \\"useContext\\" || prop === \\"useUtils\\") {",
+          "          return () => makeProxy();",
           "        }",
           "        if (",
           "          prop === \\"useQuery\\" ||",
@@ -1736,6 +1741,8 @@ function virtualStubPlugin() {
       if (id === "virtual:exhibit-env") return ENV_STUB_ID;
       if (id === "virtual:exhibit-trpc-ssg") return TRPC_SSG_STUB_ID;
       if (id === "virtual:exhibit-api") return API_STUB_ID;
+      if (normalized.endsWith("virtual:exhibit-env")) return ENV_STUB_ID;
+      if (normalized.endsWith("virtual:exhibit-trpc-ssg")) return TRPC_SSG_STUB_ID;
       if (normalized.endsWith("virtual:exhibit-api")) return API_STUB_ID;
       if (id === "@trpc/react-query/ssg") return TRPC_SSG_STUB_ID;
       if (id === "env.mjs") return ENV_STUB_ID;
@@ -1765,7 +1772,10 @@ function virtualStubPlugin() {
           "    {",
           "      get(_target, prop) {",
           "        if (prop === \\"withTRPC\\") {",
-          "          return () => (App) => App;",
+          "          return (App) => App;",
+          "        }",
+          "        if (prop === \\"useContext\\" || prop === \\"useUtils\\") {",
+          "          return () => makeProxy();",
           "        }",
           "        if (",
           "          prop === \\"useQuery\\" ||",
