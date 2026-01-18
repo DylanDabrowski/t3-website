@@ -201,12 +201,14 @@ async function ensureRuntimeDeps(framework, globalCssPath) {
   if (framework.id === "react" || framework.id === "next") {
     if (shouldInstall("react")) required.push("react");
     if (shouldInstall("react-dom")) required.push("react-dom");
+    if (shouldInstall("vite")) required.push("vite");
     if (shouldInstall("@vitejs/plugin-react")) {
       required.push("@vitejs/plugin-react");
     }
   }
   if (framework.id === "vue") {
     if (shouldInstall("vue")) required.push("vue");
+    if (shouldInstall("vite")) required.push("vite");
     if (shouldInstall("@vitejs/plugin-vue")) required.push("@vitejs/plugin-vue");
   }
   const tailwindConfig = getTailwindConfigPath();
