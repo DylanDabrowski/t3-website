@@ -23,7 +23,9 @@ const PREVIEW_INTERACTIVE = process.env.PREVIEW_INTERACTIVE !== "0";
 const PREVIEW_BUNDLE_GZIP_THRESHOLD = Number(
   process.env.PREVIEW_BUNDLE_GZIP_THRESHOLD || "0",
 );
-const SCRIPT_VERSION = "preview-script-v35";
+const PREVIEW_AUTO_INSTALL_DEPS =
+  process.env.PREVIEW_AUTO_INSTALL_DEPS !== "0";
+const SCRIPT_VERSION = "preview-script-v41";
 
 if (!PREVIEW_UPLOAD_URL || !PREVIEW_UPLOAD_TOKEN) {
   console.error("Missing PREVIEW_UPLOAD_URL or PREVIEW_UPLOAD_TOKEN");
@@ -49,7 +51,6 @@ if (COMMIT_SHA) {
 console.log(`Upload batch size: ${UPLOAD_BATCH_SIZE}`);
 console.log(`Interactive previews: ${PREVIEW_INTERACTIVE ? "enabled" : "disabled"}`);
 
-const exts = [".tsx", ".jsx"];
 const ignoredDirs = new Set([
   "node_modules",
   ".git",
@@ -59,6 +60,280 @@ const ignoredDirs = new Set([
   "out",
   ".exhibit-preview",
 ]);
+
+function walk(dir) {
+  const entries = fs.readdirSync(dir, { withFileTypes: true });
+  const files = [];
+  for (const entry of entries) {
+    if (entry.name.startsWith(".")) continue;
+    if (entry.isDirectory() && ignoredDirs.has(entry.name)) continue;
+    const full = path.join(dir, entry.name);
+    if (entry.isDirectory()) files.push(...walk(full));
+    else files.push(full);
+  }
+  return files;
+}
+
+function readPackageJson() {
+  try {
+    const content = fs.readFileSync(path.join(ROOT, "package.json"), "utf8");
+    return JSON.parse(content);
+  } catch {
+    return null;
+  }
+}
+
+function hasDependency(dep) {
+  const pkg = readPackageJson();
+  return Boolean(pkg?.dependencies?.[dep] || pkg?.devDependencies?.[dep]);
+}
+
+function canResolve(dep) {
+  try {
+    require.resolve(dep, { paths: [ROOT] });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function detectPackageManager() {
+  const hasFile = (name) => fs.existsSync(path.join(ROOT, name));
+  if (hasFile("pnpm-lock.yaml")) return "pnpm";
+  if (hasFile("yarn.lock")) return "yarn";
+  if (hasFile("package-lock.json")) return "npm";
+  return "npm";
+}
+
+const installSummaries = [];
+
+async function installDeps(pkgs) {
+  if (pkgs.length === 0) return;
+  const pm = detectPackageManager();
+  const command = process.platform === "win32" ? "npm.cmd" : "npm";
+  const pnpmCommand = process.platform === "win32" ? "pnpm.cmd" : "pnpm";
+  const yarnCommand = process.platform === "win32" ? "yarn.cmd" : "yarn";
+  const summary = {
+    packages: [...pkgs],
+    manager: pm,
+    args: [],
+    success: false,
+    error: null,
+  };
+  try {
+    if (pm === "pnpm") {
+      summary.args = ["add", "-D", ...pkgs];
+      await runCommand(pnpmCommand, summary.args, { cwd: ROOT });
+      summary.success = true;
+      summary.error = null;
+      installSummaries.push(summary);
+      return;
+    }
+    if (pm === "yarn") {
+      summary.args = ["add", "-D", ...pkgs];
+      await runCommand(yarnCommand, summary.args, { cwd: ROOT });
+      summary.success = true;
+      summary.error = null;
+      installSummaries.push(summary);
+      return;
+    }
+  } catch (err) {
+    summary.error = err instanceof Error ? err.message : String(err);
+    console.warn(`Dependency install failed with ${pm}, falling back to npm.`);
+  }
+  summary.manager = "npm";
+  const npmEnv = {
+    ...process.env,
+    NODE_ENV: "development",
+    NPM_CONFIG_PRODUCTION: "false",
+    NPM_CONFIG_OMIT: "",
+    NPM_CONFIG_INCLUDE: "dev",
+    NPM_CONFIG_PRUNE: "false",
+  };
+  try {
+    summary.args = [
+      "install",
+      "--no-save",
+      "--no-package-lock",
+      "--no-fund",
+      "--no-audit",
+      "--include=dev",
+      "--production=false",
+      ...pkgs,
+    ];
+    await runCommand(command, summary.args, { cwd: ROOT, env: npmEnv });
+    summary.success = true;
+    summary.error = null;
+    installSummaries.push(summary);
+  } catch {
+    summary.args = [
+      "install",
+      "--no-save",
+      "--no-package-lock",
+      "--no-fund",
+      "--no-audit",
+      "--include=dev",
+      "--production=false",
+      "--legacy-peer-deps",
+      ...pkgs,
+    ];
+    try {
+      await runCommand(command, summary.args, { cwd: ROOT, env: npmEnv });
+      summary.success = true;
+      summary.error = null;
+      installSummaries.push(summary);
+    } catch (err) {
+      summary.error = err instanceof Error ? err.message : String(err);
+      installSummaries.push(summary);
+      throw err;
+    }
+  }
+}
+
+async function ensureRuntimeDeps(framework, globalCssPath) {
+  if (!PREVIEW_AUTO_INSTALL_DEPS) return;
+  const required = [];
+  const shouldInstall = (dep) => !canResolve(dep) || !hasDependency(dep);
+  const needsPlaywright =
+    !canResolve("playwright") ||
+    !canResolve("playwright/package.json") ||
+    !hasDependency("playwright");
+  if (framework.id === "react" || framework.id === "next") {
+    if (shouldInstall("react")) required.push("react");
+    if (shouldInstall("react-dom")) required.push("react-dom");
+    if (shouldInstall("@vitejs/plugin-react")) {
+      required.push("@vitejs/plugin-react");
+    }
+  }
+  if (framework.id === "vue") {
+    if (shouldInstall("vue")) required.push("vue");
+    if (shouldInstall("@vitejs/plugin-vue")) required.push("@vitejs/plugin-vue");
+  }
+  const tailwindConfig = getTailwindConfigPath();
+  const tailwindMajor = getTailwindMajorVersion(globalCssPath);
+  const usesTailwind =
+    Boolean(tailwindConfig) ||
+    globalCssHasTailwind(globalCssPath) ||
+    tailwindMajor !== null;
+  if (usesTailwind) {
+    if (shouldInstall("tailwindcss")) required.push("tailwindcss");
+    if (shouldInstall("postcss")) required.push("postcss");
+    if (shouldInstall("autoprefixer")) required.push("autoprefixer");
+    if (tailwindMajor && tailwindMajor >= 4) {
+      if (shouldInstall("@tailwindcss/postcss")) {
+        required.push("@tailwindcss/postcss");
+      }
+    }
+  }
+  if (needsPlaywright) {
+    required.push("playwright");
+  }
+  if (required.length === 0) return;
+  console.log(`Installing missing runtime deps: ${required.join(", ")}`);
+  await installDeps(required);
+}
+
+function detectFramework() {
+  const pkg = readPackageJson();
+  const deps = {
+    ...(pkg?.dependencies || {}),
+    ...(pkg?.devDependencies || {}),
+  };
+  const has = (name) => Boolean(deps[name]);
+
+  if (has("next")) {
+    return {
+      id: "next",
+      exts: [".tsx", ".jsx"],
+      supported: canResolve("react") && canResolve("react-dom/client"),
+      reason: "Next.js",
+    };
+  }
+  if (has("react")) {
+    return {
+      id: "react",
+      exts: [".tsx", ".jsx"],
+      supported: canResolve("react") && canResolve("react-dom/client"),
+      reason: "React",
+    };
+  }
+  if (has("vue")) {
+    const supported = canResolve("vue") && canResolve("@vitejs/plugin-vue");
+    return {
+      id: "vue",
+      exts: [".vue"],
+      supported,
+      reason: supported
+        ? "Vue"
+        : "Vue runtime dependencies are missing. Install vue and @vitejs/plugin-vue.",
+    };
+  }
+  if (has("svelte")) {
+    return {
+      id: "svelte",
+      exts: [".svelte"],
+      supported: false,
+      reason: "Svelte adapter not implemented yet",
+    };
+  }
+  if (has("astro")) {
+    return {
+      id: "astro",
+      exts: [".astro"],
+      supported: false,
+      reason: "Astro adapter not implemented yet",
+    };
+  }
+  const hasFiles = (extension) =>
+    fs.existsSync(ROOT) &&
+    walk(ROOT).some((filePath) => filePath.endsWith(extension));
+
+  if (hasFiles(".astro")) {
+    return {
+      id: "astro",
+      exts: [".astro"],
+      supported: false,
+      reason: "Astro adapter not implemented yet",
+    };
+  }
+  if (hasFiles(".svelte")) {
+    return {
+      id: "svelte",
+      exts: [".svelte"],
+      supported: false,
+      reason: "Svelte adapter not implemented yet",
+    };
+  }
+  if (hasFiles(".vue")) {
+    const supported = canResolve("vue") && canResolve("@vitejs/plugin-vue");
+    return {
+      id: "vue",
+      exts: [".vue"],
+      supported,
+      reason: supported
+        ? "Vue files detected"
+        : "Vue runtime dependencies are missing. Install vue and @vitejs/plugin-vue.",
+    };
+  }
+  if (hasFiles(".tsx") || hasFiles(".jsx")) {
+    return {
+      id: "react",
+      exts: [".tsx", ".jsx"],
+      supported: canResolve("react") && canResolve("react-dom/client"),
+      reason: "React files detected",
+    };
+  }
+
+  return {
+    id: "unknown",
+    exts: [".tsx", ".jsx", ".vue", ".svelte", ".astro"],
+    supported: false,
+    reason: "Unsupported framework",
+  };
+}
+
+let FRAMEWORK = detectFramework();
+let exts = FRAMEWORK.exts;
 const aliasCandidates = [
   { find: "next/link", file: "stubs/next-link.tsx" },
   { find: "next/image", file: "stubs/next-image.tsx" },
@@ -81,22 +356,66 @@ const aliasCandidates = [
   { find: "env.mjs", file: "stubs/env.ts" },
 ];
 
-function walk(dir) {
-  const entries = fs.readdirSync(dir, { withFileTypes: true });
-  const files = [];
-  for (const entry of entries) {
-    if (entry.name.startsWith(".")) continue;
-    if (entry.isDirectory() && ignoredDirs.has(entry.name)) continue;
-    const full = path.join(dir, entry.name);
-    if (entry.isDirectory()) files.push(...walk(full));
-    else files.push(full);
-  }
-  return files;
+
+function getComponentRoots() {
+  const candidates = [
+    "src/components",
+    "src/app/components",
+    "src/app/components/ui",
+    "src/app/ui",
+    "src/ui",
+    "components",
+    "app/components",
+    "app/ui",
+    "ui",
+  ];
+  return candidates
+    .map((rel) => path.join(ROOT, rel))
+    .filter((full) => fs.existsSync(full));
 }
 
 function findComponents() {
-  const files = walk(ROOT);
-  return files.filter((f) => exts.includes(path.extname(f).toLowerCase()));
+  const roots = getComponentRoots();
+  const files = roots.length > 0 ? roots.flatMap((root) => walk(root)) : walk(ROOT);
+  const unique = new Set();
+  for (const file of files) {
+    const ext = path.extname(file).toLowerCase();
+    if (!exts.includes(ext)) continue;
+    unique.add(file);
+  }
+  return Array.from(unique);
+}
+
+function createPreviewSummary({ framework, components, assets, bundle }) {
+  const completed = assets.filter((asset) => asset.status === "COMPLETED").length;
+  const failed = assets.filter((asset) => asset.status === "FAILED");
+  const bundleStatus = bundle ? "yes" : "no";
+  const summaryLines = [
+    `Framework: ${framework.id}`,
+    `Components: ${components.length}`,
+    `Completed: ${completed}`,
+    `Failed: ${failed.length}`,
+    `Interactive bundle: ${bundleStatus}`,
+  ];
+  if (failed.length > 0) {
+    const samples = failed
+      .slice(0, 5)
+      .map((asset) => `${asset.componentPath}: ${asset.errorMessage || "failed"}`)
+      .join(" | ");
+    summaryLines.push(`Failures sample: ${samples}`);
+  }
+  return summaryLines.join("\n");
+}
+
+function logInstallSummary() {
+  if (installSummaries.length === 0) return;
+  console.log("Install summary:");
+  for (const entry of installSummaries) {
+    const status = entry.success ? "ok" : "failed";
+    const manager = entry.manager || "unknown";
+    const packages = entry.packages.join(", ");
+    console.log(`- ${manager} ${status}: ${packages}`);
+  }
 }
 
 function getTailwindConfigPath() {
@@ -335,7 +654,7 @@ module.exports = { ...userConfig, content };
   return previewConfigPath;
 }
 
-function getTailwindMajorVersion() {
+function getTailwindMajorVersion(globalCssPath) {
   try {
     const pkgPath = path.join(ROOT, "package.json");
     const content = fs.readFileSync(pkgPath, "utf8");
@@ -348,6 +667,18 @@ function getTailwindMajorVersion() {
     }
   } catch {
     // ignore and fallback
+  }
+  if (!globalCssPath) return null;
+  try {
+    const content = fs.readFileSync(globalCssPath, "utf8");
+    if (/@import\s+['"]tailwindcss['"]/.test(content)) {
+      return 4;
+    }
+    if (/@tailwind\s+(base|components|utilities)/.test(content)) {
+      return 3;
+    }
+  } catch {
+    return null;
   }
   return null;
 }
@@ -615,7 +946,7 @@ function writeNormalizedGlobalCss(globalCssPath) {
   try {
     const content = fs.readFileSync(globalCssPath, "utf8");
     const cache = new Map();
-    const tailwindMajor = getTailwindMajorVersion();
+    const tailwindMajor = getTailwindMajorVersion(globalCssPath);
     const normalized = normalizeCssForVite(
       content,
       path.dirname(globalCssPath),
@@ -910,8 +1241,11 @@ export default { api };
   );
 }
 
-function writePreviewApp(components, globalCssPath) {
+function writePreviewApp(components, globalCssPath, framework) {
   const srcDir = path.join(PREVIEW_DIR, "src");
+  const isVue = framework?.id === "vue";
+  const mainEntry = isVue ? "main.ts" : "main.tsx";
+  const previewAppEntry = isVue ? "preview-app.ts" : "preview-app.tsx";
   const stubDir = path.join(srcDir, "stubs");
   const projectAliases = normalizeAliasEntries(getProjectAliases());
   if (projectAliases.length > 0) {
@@ -960,9 +1294,17 @@ function writePreviewApp(components, globalCssPath) {
   const usesTailwind =
     Boolean(tailwindConfig) || globalCssHasTailwind(globalCssPath);
   if (usesTailwind) {
-    const tailwindMajor = getTailwindMajorVersion();
-    const tailwindPlugin =
-      tailwindMajor && tailwindMajor >= 4 ? "@tailwindcss/postcss" : "tailwindcss";
+    const tailwindMajor = getTailwindMajorVersion(globalCssPath);
+    let tailwindPlugin = "tailwindcss";
+    if (tailwindMajor && tailwindMajor >= 4) {
+      if (canResolve("@tailwindcss/postcss")) {
+        tailwindPlugin = "@tailwindcss/postcss";
+      } else {
+        console.warn(
+          "Tailwind v4 detected but @tailwindcss/postcss is missing; using tailwindcss plugin fallback.",
+        );
+      }
+    }
     const previewTailwindConfig = writeTailwindPreviewConfig(tailwindConfig);
     if (previewTailwindConfig) {
       console.log(`Preview Tailwind config: ${previewTailwindConfig}`);
@@ -996,7 +1338,7 @@ function writePreviewApp(components, globalCssPath) {
   </head>
   <body>
     <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
+    <script type="module" src="/src/${mainEntry}"></script>
   </body>
 </html>
 `,
@@ -1029,9 +1371,17 @@ if (!globalProcess.process) {
 `,
   );
 
-  fs.writeFileSync(
-    path.join(srcDir, "main.tsx"),
-    `${globalImport}import "./preview-env";
+  const mainSource = isVue
+    ? `${globalImport}import "./preview-env";
+import { createApp } from "vue";
+import App from "./preview-app";
+
+const root = document.getElementById("root");
+if (root) {
+  createApp(App).mount(root);
+}
+`
+    : `${globalImport}import "./preview-env";
 import React from "react";
 import { createRoot } from "react-dom/client";
 import App from "./preview-app";
@@ -1040,12 +1390,140 @@ const root = document.getElementById("root");
 if (root) {
   createRoot(root).render(<App />);
 }
-`,
-  );
+`;
+  fs.writeFileSync(path.join(srcDir, mainEntry), mainSource);
 
-  fs.writeFileSync(
-    path.join(srcDir, "preview-app.tsx"),
-    `import React, { useEffect, useMemo, useState } from "react";
+  const previewAppSource = isVue
+    ? `import { defineComponent, h, onBeforeUnmount, onErrorCaptured, onMounted, ref } from "vue";
+import { components } from "./components";
+
+type PreviewStatus = "loading" | "ready" | "error";
+
+function resolveProps() {
+  const params = new URLSearchParams(window.location.search);
+  const raw = params.get("props");
+  if (!raw) return {};
+  try {
+    return JSON.parse(raw);
+  } catch {
+    return {};
+  }
+}
+
+function resolveTargetPath() {
+  const params = new URLSearchParams(window.location.search);
+  return params.get("path");
+}
+
+export default defineComponent({
+  name: "PreviewApp",
+  setup() {
+    const status = ref<PreviewStatus>("loading");
+    const error = ref<string | null>(null);
+    const componentRef = ref<any>(null);
+    const props = ref(resolveProps());
+    const targetPath = ref(resolveTargetPath());
+    const containerStyle = {
+      minHeight: "100vh",
+      background: "white",
+      padding: "24px",
+      boxSizing: "border-box",
+    };
+    const errorStyle = {
+      border: "1px solid #e5e7eb",
+      padding: "16px",
+      borderRadius: "12px",
+      color: "#111827",
+      fontFamily: "ui-sans-serif, system-ui, sans-serif",
+    };
+
+    const loadComponent = async () => {
+      const path = targetPath.value;
+      if (!path) {
+        status.value = "error";
+        error.value = "Missing component path";
+        return;
+      }
+      const entry = components.find((c) => c.path === path);
+      if (!entry) {
+        status.value = "error";
+        error.value = "Component not found";
+        return;
+      }
+      try {
+        const mod = await entry.importer();
+        const preferredName = entry?.name;
+        const isComponent = (value) =>
+          typeof value === "function" ||
+          (value && typeof value === "object");
+        const pickExport = () => {
+          if (preferredName && isComponent(mod[preferredName])) {
+            return mod[preferredName];
+          }
+          if (isComponent(mod.default)) return mod.default;
+          for (const key of Object.keys(mod)) {
+            if (key === "default") continue;
+            if (isComponent(mod[key])) return mod[key];
+          }
+          return mod.default || mod[Object.keys(mod)[0]];
+        };
+        const Exported = pickExport();
+        if (!Exported) {
+          throw new Error("No component export found");
+        }
+        componentRef.value = Exported;
+        status.value = "ready";
+      } catch (err) {
+        status.value = "error";
+        error.value = err instanceof Error ? err.message : String(err);
+      }
+    };
+
+    const syncFromLocation = () => {
+      targetPath.value = resolveTargetPath();
+      props.value = resolveProps();
+      status.value = "loading";
+      error.value = null;
+      componentRef.value = null;
+      loadComponent();
+    };
+
+    onMounted(() => {
+      syncFromLocation();
+      window.addEventListener("popstate", syncFromLocation);
+      window.addEventListener("hashchange", syncFromLocation);
+    });
+    onBeforeUnmount(() => {
+      window.removeEventListener("popstate", syncFromLocation);
+      window.removeEventListener("hashchange", syncFromLocation);
+    });
+    onErrorCaptured((err) => {
+      status.value = "error";
+      error.value = err instanceof Error ? err.message : String(err);
+      return false;
+    });
+
+    return () =>
+      h(
+        "div",
+        {
+          id: "exhibit-preview",
+          "data-exhibit-preview": status.value,
+          style: containerStyle,
+        },
+        [
+          status.value === "error"
+            ? h("div", { style: errorStyle }, "Preview error: " + error.value)
+            : null,
+          status.value === "ready" && componentRef.value
+            ? h(componentRef.value, props.value || {})
+            : null,
+        ],
+      );
+  },
+});
+`
+    : `import React, { useEffect, useMemo, useState } from "react";
 import { components } from "./components";
 
 type PreviewStatus = "loading" | "ready" | "error";
@@ -1106,9 +1584,22 @@ export default function App() {
     entry
       .importer()
       .then((mod: any) => {
-        const Exported =
-          mod.default ||
-          mod[Object.keys(mod).find((key) => key !== "default") || ""];
+        const preferredName = entry?.name;
+        const isComponent = (value: any) =>
+          typeof value === "function" ||
+          (value && typeof value === "object" && "$$typeof" in value);
+        const pickExport = () => {
+          if (preferredName && isComponent(mod[preferredName])) {
+            return mod[preferredName];
+          }
+          if (isComponent(mod.default)) return mod.default;
+          for (const key of Object.keys(mod)) {
+            if (key === "default") continue;
+            if (isComponent(mod[key])) return mod[key];
+          }
+          return mod.default || mod[Object.keys(mod)[0]];
+        };
+        const Exported = pickExport();
         if (!Exported) {
           throw new Error("No component export found");
         }
@@ -1158,14 +1649,18 @@ export default function App() {
     </div>
   );
 }
-`,
-  );
+`;
+  fs.writeFileSync(path.join(srcDir, previewAppEntry), previewAppSource);
 
-  const tailwindMajor = getTailwindMajorVersion();
+  const tailwindMajor = getTailwindMajorVersion(globalCssPath);
+  const vitePluginImport = isVue
+    ? 'import vue from "@vitejs/plugin-vue";'
+    : 'import react from "@vitejs/plugin-react";';
+  const vitePluginUsage = isVue ? "vue()" : "react()";
   fs.writeFileSync(
     path.join(PREVIEW_DIR, "vite.config.ts"),
     `import { defineConfig } from "vite";
-import react from "@vitejs/plugin-react";
+${vitePluginImport}
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
@@ -1444,7 +1939,7 @@ function cssNormalizePlugin() {
 
 export default defineConfig({
   root: __dirname,
-  plugins: [virtualStubPlugin(), cssNormalizePlugin(), react()],
+  plugins: [virtualStubPlugin(), cssNormalizePlugin(), ${vitePluginUsage}],
   resolve: {
     alias: [
       { find: "@trpc/react-query/ssg", replacement: "virtual:exhibit-trpc-ssg" },
@@ -1519,13 +2014,16 @@ function runCommand(command, args, options = {}) {
   });
 }
 
-async function buildInteractiveBundle(components, globalCssPath) {
+async function buildInteractiveBundle(components, globalCssPath, framework) {
   if (!PREVIEW_INTERACTIVE) return null;
   console.log("Building interactive preview bundle...");
   const bundleDir = path.join(PREVIEW_DIR, "bundle");
   const distDir = path.join(bundleDir, "dist");
   const assetsDir = path.join(distDir, "assets");
   const stubRoot = path.join(bundleDir, "stubs");
+  const isVue = framework?.id === "vue";
+  const bundleMainEntry = isVue ? "bundle-main.ts" : "bundle-main.tsx";
+  const bundleAppEntry = isVue ? "bundle-app.ts" : "bundle-app.tsx";
   const projectAliases = normalizeAliasEntries(getProjectAliases());
   fs.mkdirSync(bundleDir, { recursive: true });
   writePreviewStubs(stubRoot);
@@ -1537,7 +2035,11 @@ async function buildInteractiveBundle(components, globalCssPath) {
     `Bundle stubs: ${stubRoot} (${fs.existsSync(bundleEnvPath) ? "ready" : "missing"})`,
   );
 
-  const tailwindMajor = getTailwindMajorVersion();
+  const tailwindMajor = getTailwindMajorVersion(globalCssPath);
+  const bundleVitePluginImport = isVue
+    ? 'import vue from "@vitejs/plugin-vue";'
+    : 'import react from "@vitejs/plugin-react";';
+  const bundleVitePluginUsage = isVue ? "vue()" : "react()";
   let bundleCss = "";
   if (globalCssPath) {
     const content = fs.readFileSync(globalCssPath, "utf8");
@@ -1567,9 +2069,123 @@ async function buildInteractiveBundle(components, globalCssPath) {
     `export const components = [\n${entries.join(",\n")}\n];\n`,
   );
 
-  fs.writeFileSync(
-    path.join(bundleDir, "bundle-app.tsx"),
-    `import React, { useEffect, useMemo, useState } from "react";
+  const bundleAppSource = isVue
+    ? `import { defineComponent, h, onErrorCaptured, ref } from "vue";
+import { components } from "./bundle-components";
+
+type PreviewStatus = "loading" | "ready" | "error";
+
+function resolveTargetPath() {
+  const win = window as any;
+  if (win.__EXHIBIT_COMPONENT_PATH__) return win.__EXHIBIT_COMPONENT_PATH__;
+  const params = new URLSearchParams(window.location.search);
+  return params.get("path");
+}
+
+function resolveProps() {
+  const win = window as any;
+  if (win.__EXHIBIT_COMPONENT_PROPS__) return win.__EXHIBIT_COMPONENT_PROPS__;
+  const params = new URLSearchParams(window.location.search);
+  const raw = params.get("props");
+  if (!raw) return {};
+  try {
+    return JSON.parse(raw);
+  } catch {
+    return {};
+  }
+}
+
+export default defineComponent({
+  name: "BundleApp",
+  setup() {
+    const status = ref<PreviewStatus>("loading");
+    const error = ref<string | null>(null);
+    const componentRef = ref<any>(null);
+    const props = ref(resolveProps());
+    const containerStyle = {
+      minHeight: "100vh",
+      background: "white",
+      padding: "24px",
+      boxSizing: "border-box",
+    };
+    const errorStyle = {
+      border: "1px solid #e5e7eb",
+      padding: "16px",
+      borderRadius: "12px",
+      color: "#111827",
+      fontFamily: "ui-sans-serif, system-ui, sans-serif",
+    };
+
+    const loadComponent = async () => {
+      const targetPath = resolveTargetPath();
+      if (!targetPath) {
+        status.value = "error";
+        error.value = "Missing component path";
+        return;
+      }
+      const entry = components.find((c) => c.path === targetPath);
+      if (!entry) {
+        status.value = "error";
+        error.value = "Component not found";
+        return;
+      }
+      try {
+        const mod = await entry.importer();
+        const preferredName = entry?.name;
+        const isComponent = (value) =>
+          typeof value === "function" ||
+          (value && typeof value === "object");
+        const pickExport = () => {
+          if (preferredName && isComponent(mod[preferredName])) {
+            return mod[preferredName];
+          }
+          if (isComponent(mod.default)) return mod.default;
+          for (const key of Object.keys(mod)) {
+            if (key === "default") continue;
+            if (isComponent(mod[key])) return mod[key];
+          }
+          return mod.default || mod[Object.keys(mod)[0]];
+        };
+        const Exported = pickExport();
+        if (!Exported) {
+          throw new Error("No component export found");
+        }
+        componentRef.value = Exported;
+        status.value = "ready";
+      } catch (err) {
+        status.value = "error";
+        error.value = err instanceof Error ? err.message : String(err);
+      }
+    };
+
+    loadComponent();
+    onErrorCaptured((err) => {
+      status.value = "error";
+      error.value = err instanceof Error ? err.message : String(err);
+      return false;
+    });
+
+    return () =>
+      h(
+        "div",
+        {
+          id: "exhibit-preview",
+          "data-exhibit-preview": status.value,
+          style: containerStyle,
+        },
+        [
+          status.value === "error"
+            ? h("div", { style: errorStyle }, "Preview error: " + error.value)
+            : null,
+          status.value === "ready" && componentRef.value
+            ? h(componentRef.value, props.value || {})
+            : null,
+        ],
+      );
+  },
+});
+`
+    : `import React, { useEffect, useMemo, useState } from "react";
 import { components } from "./bundle-components";
 
 type PreviewStatus = "loading" | "ready" | "error";
@@ -1636,9 +2252,22 @@ export default function BundleApp() {
     entry
       .importer()
       .then((mod: any) => {
-        const Exported =
-          mod.default ||
-          mod[Object.keys(mod).find((key) => key !== "default") || ""];
+        const preferredName = entry?.name;
+        const isComponent = (value: any) =>
+          typeof value === "function" ||
+          (value && typeof value === "object" && "$$typeof" in value);
+        const pickExport = () => {
+          if (preferredName && isComponent(mod[preferredName])) {
+            return mod[preferredName];
+          }
+          if (isComponent(mod.default)) return mod.default;
+          for (const key of Object.keys(mod)) {
+            if (key === "default") continue;
+            if (isComponent(mod[key])) return mod[key];
+          }
+          return mod.default || mod[Object.keys(mod)[0]];
+        };
+        const Exported = pickExport();
         if (!Exported) {
           throw new Error("No component export found");
         }
@@ -1688,8 +2317,8 @@ export default function BundleApp() {
     </div>
   );
 }
-`,
-  );
+`;
+  fs.writeFileSync(path.join(bundleDir, bundleAppEntry), bundleAppSource);
 
   fs.writeFileSync(
     path.join(bundleDir, "bundle-env.ts"),
@@ -1713,9 +2342,18 @@ if (!globalProcess.process) {
 `,
   );
 
-  fs.writeFileSync(
-    path.join(bundleDir, "bundle-main.tsx"),
-    `import "./bundle-env";
+  const bundleMainSource = isVue
+    ? `import "./bundle-env";
+import { createApp } from "vue";
+import BundleApp from "./bundle-app";
+import "./bundle-global.css";
+
+const root = document.getElementById("root");
+if (root) {
+  createApp(BundleApp).mount(root);
+}
+`
+    : `import "./bundle-env";
 import React from "react";
 import { createRoot } from "react-dom/client";
 import BundleApp from "./bundle-app";
@@ -1725,8 +2363,8 @@ const root = document.getElementById("root");
 if (root) {
   createRoot(root).render(<BundleApp />);
 }
-`,
-  );
+`;
+  fs.writeFileSync(path.join(bundleDir, bundleMainEntry), bundleMainSource);
 
   fs.writeFileSync(
     path.join(bundleDir, "index.html"),
@@ -1739,7 +2377,7 @@ if (root) {
   </head>
   <body>
     <div id="root"></div>
-    <script type="module" src="/bundle-main.tsx"></script>
+    <script type="module" src="/${bundleMainEntry}"></script>
   </body>
 </html>
 `,
@@ -1748,7 +2386,7 @@ if (root) {
   fs.writeFileSync(
     path.join(bundleDir, "vite.config.ts"),
     `import { defineConfig } from "vite";
-import react from "@vitejs/plugin-react";
+${bundleVitePluginImport}
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
@@ -2023,7 +2661,7 @@ function cssNormalizePlugin() {
 
 export default defineConfig({
   root: __dirname,
-  plugins: [virtualStubPlugin(), cssNormalizePlugin(), react()],
+  plugins: [virtualStubPlugin(), cssNormalizePlugin(), ${bundleVitePluginUsage}],
   css: {
     postcss: path.resolve(repoRoot, ".exhibit-preview", "postcss.config.cjs"),
   },
@@ -2136,8 +2774,32 @@ ${bundle.js}
 }
 
 async function renderScreenshots(componentPaths) {
-  const browser = await chromium.launch();
-  const page = await browser.newPage({ viewport: { width: 1280, height: 720 } });
+  let browser;
+  try {
+    browser = await chromium.launch();
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.warn(`Screenshot rendering unavailable: ${message}`);
+    return componentPaths.map((componentPath) => ({
+      componentPath,
+      status: "FAILED",
+      errorMessage: `Preview error: ${message}`,
+    }));
+  }
+
+  let page;
+  try {
+    page = await browser.newPage({ viewport: { width: 1280, height: 720 } });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.warn(`Preview page creation failed: ${message}`);
+    await browser.close();
+    return componentPaths.map((componentPath) => ({
+      componentPath,
+      status: "FAILED",
+      errorMessage: `Preview error: ${message}`,
+    }));
+  }
   const assets = [];
   console.log(`Rendering ${componentPaths.length} component previews...`);
   let currentComponent = "unknown";
@@ -2273,6 +2935,19 @@ async function upload(assets, bundle) {
 }
 
 async function main() {
+  const globalCssPath = findGlobalCss();
+  if (globalCssPath) {
+    console.log(`Detected global CSS at ${globalCssPath}`);
+  } else {
+    console.log("No global CSS detected.");
+  }
+  await ensureRuntimeDeps(FRAMEWORK, globalCssPath);
+  FRAMEWORK = detectFramework();
+  exts = FRAMEWORK.exts;
+  console.log(`Detected framework: ${FRAMEWORK.id}`);
+  if (!FRAMEWORK.supported) {
+    console.warn(`Preview adapter unavailable: ${FRAMEWORK.reason}`);
+  }
   const components = findComponents().map((filePath) =>
     path.relative(ROOT, filePath).replace(/\\/g, "/"),
   );
@@ -2282,21 +2957,46 @@ async function main() {
   }
   console.log(`Found ${components.length} component files.`);
 
+  if (!FRAMEWORK.supported) {
+    const reason =
+      FRAMEWORK.id === "react" || FRAMEWORK.id === "next"
+        ? "React runtime dependencies are missing. Install react and react-dom."
+        : FRAMEWORK.id === "vue"
+          ? "Vue runtime dependencies are missing. Install vue and @vitejs/plugin-vue."
+          : FRAMEWORK.reason;
+    console.warn(`Skipping preview generation: ${reason}`);
+    const assets = components.map((componentPath) => ({
+      componentPath,
+      status: "FAILED",
+      errorMessage: `Preview skipped: ${reason}`,
+    }));
+    await upload(assets, null);
+    console.log("Preview summary:");
+    console.log(
+      createPreviewSummary({
+        framework: FRAMEWORK,
+        components,
+        assets,
+        bundle: null,
+      }),
+    );
+    logInstallSummary();
+    return;
+  }
+
   if (fs.existsSync(PREVIEW_DIR)) {
     fs.rmSync(PREVIEW_DIR, { recursive: true, force: true });
   }
 
-  const globalCssPath = findGlobalCss();
-  if (globalCssPath) {
-    console.log(`Detected global CSS at ${globalCssPath}`);
-  } else {
-    console.log("No global CSS detected.");
-  }
-  writePreviewApp(components, globalCssPath);
+  writePreviewApp(components, globalCssPath, FRAMEWORK);
 
   let interactiveBundle = null;
   try {
-    interactiveBundle = await buildInteractiveBundle(components, globalCssPath);
+    interactiveBundle = await buildInteractiveBundle(
+      components,
+      globalCssPath,
+      FRAMEWORK,
+    );
   } catch (err) {
     console.warn("Interactive bundle build failed:", err);
   }
@@ -2306,6 +3006,16 @@ async function main() {
     await waitForServer();
     const assets = await renderScreenshots(components);
     await upload(assets, interactiveBundle);
+    console.log("Preview summary:");
+    console.log(
+      createPreviewSummary({
+        framework: FRAMEWORK,
+        components,
+        assets,
+        bundle: interactiveBundle,
+      }),
+    );
+    logInstallSummary();
   } finally {
     viteProcess.kill();
   }
