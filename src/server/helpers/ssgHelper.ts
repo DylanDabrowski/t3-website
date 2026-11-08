@@ -7,6 +7,6 @@ import { s3 } from "../aws/s3";
 export const generateSSGHelper = () =>
   createProxySSGHelpers({
     router: appRouter,
-    ctx: { prisma, s3 },
+    ctx: { prisma, s3, userId: null },
     transformer: superjson, // optional - adds superjson serialization
   });

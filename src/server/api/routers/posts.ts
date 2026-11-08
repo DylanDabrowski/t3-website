@@ -1,5 +1,9 @@
 import { z } from "zod";
-import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
+import {
+  adminProcedure,
+  createTRPCRouter,
+  publicProcedure,
+} from "~/server/api/trpc";
 import { Ratelimit } from "@upstash/ratelimit";
 import { Redis } from "@upstash/redis";
 import { TRPCError } from "@trpc/server";
@@ -17,7 +21,7 @@ export const postsRouter = createTRPCRouter({
     });
   }),
 
-  create: publicProcedure
+  create: adminProcedure
     .input(
       z.object({
         image: z.string(),

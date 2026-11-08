@@ -18,8 +18,10 @@ import { type CreateNextContextOptions } from "@trpc/server/adapters/next";
 
 import { prisma } from "~/server/db";
 import { s3 } from "../aws/s3";
+import { env } from "~/env.mjs";
+import { getRequestUserId } from "~/server/auth";
 
-type CreateContextOptions = Record<string, never>;
+type CreateContextOptions = { userId: string | null };
 
 /**
  * This helper generates the "internals" for a tRPC context. If you need to use it, you can export
@@ -31,10 +33,11 @@ type CreateContextOptions = Record<string, never>;
  *
  * @see https://create.t3.gg/en/usage/trpc#-serverapitrpcts
  */
-const createInnerTRPCContext = (_opts: CreateContextOptions) => {
+const createInnerTRPCContext = (opts: CreateContextOptions) => {
   return {
     prisma,
     s3,
+    userId: opts.userId,
   };
 };
 
@@ -44,8 +47,9 @@ const createInnerTRPCContext = (_opts: CreateContextOptions) => {
  *
  * @see https://trpc.io/docs/context
  */
-export const createTRPCContext = (_opts: CreateNextContextOptions) => {
-  return createInnerTRPCContext({});
+export const createTRPCContext = async ({ req }: CreateNextContextOptions) => {
+  const userId = await getRequestUserId(req);
+  return createInnerTRPCContext({ userId });
 };
 
 /**
@@ -55,7 +59,7 @@ export const createTRPCContext = (_opts: CreateNextContextOptions) => {
  * ZodErrors so that you get typesafety on the frontend if your procedure fails due to validation
  * errors on the backend.
  */
-import { initTRPC } from "@trpc/server";
+import { initTRPC, TRPCError } from "@trpc/server";
 import superjson from "superjson";
 import { ZodError } from "zod";
 
@@ -95,3 +99,16 @@ export const createTRPCRouter = t.router;
  * are logged in.
  */
 export const publicProcedure = t.procedure;
+
+/** Enforce admin access on the server before any database or storage operation. */
+export const adminProcedure = t.procedure.use(({ ctx, next }) => {
+  if (!ctx.userId) {
+    throw new TRPCError({ code: "UNAUTHORIZED" });
+  }
+
+  if (!env.NEXT_PUBLIC_ADMINID || ctx.userId !== env.NEXT_PUBLIC_ADMINID) {
+    throw new TRPCError({ code: "FORBIDDEN" });
+  }
+
+  return next({ ctx: { ...ctx, userId: ctx.userId } });
+});
