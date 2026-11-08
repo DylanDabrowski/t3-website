@@ -1,13 +1,13 @@
 import { z } from "zod";
 
-import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
+import { adminProcedure, createTRPCRouter } from "~/server/api/trpc";
 import { env } from "~/env.mjs";
 import { PutObjectCommand, UploadPartCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { TRPCError } from "@trpc/server";
 
 export const s3Router = createTRPCRouter({
-  getObjects: publicProcedure.query(async ({ ctx }) => {
+  getObjects: adminProcedure.query(async ({ ctx }) => {
     const { s3 } = ctx;
 
     const listObjectsOutput = await s3.listObjectsV2({
@@ -17,7 +17,7 @@ export const s3Router = createTRPCRouter({
     return listObjectsOutput.Contents ?? [];
   }),
 
-  getObjectByKey: publicProcedure
+  getObjectByKey: adminProcedure
     .input(z.object({ key: z.string() }))
     .query(async ({ ctx, input }) => {
       const { key } = input;
@@ -38,7 +38,7 @@ export const s3Router = createTRPCRouter({
       return { Body: object };
     }),
 
-  getStandardUploadPresignedUrl: publicProcedure
+  getStandardUploadPresignedUrl: adminProcedure
     .input(z.object({ key: z.string() }))
     .mutation(async ({ ctx, input }) => {
       const { key } = input;
@@ -52,7 +52,7 @@ export const s3Router = createTRPCRouter({
       return await getSignedUrl(s3, putObjectCommand);
     }),
 
-  getMultipartUploadPresignedUrl: publicProcedure
+  getMultipartUploadPresignedUrl: adminProcedure
     .input(z.object({ key: z.string(), filePartTotal: z.number() }))
     .mutation(async ({ ctx, input }) => {
       const { key, filePartTotal } = input;
@@ -96,7 +96,7 @@ export const s3Router = createTRPCRouter({
       };
     }),
 
-  completeMultipartUpload: publicProcedure
+  completeMultipartUpload: adminProcedure
     .input(
       z.object({
         key: z.string(),
